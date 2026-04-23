@@ -534,6 +534,49 @@ const Index = () => {
             </div>
           </SectionCard>
 
+          {/* Tren motriz */}
+          {(
+            [
+              { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
+              { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
+              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
+            ]
+          ).map(({ title, icon, items, section, prefix }) => (
+            <SectionCard
+              key={section}
+              title={title}
+              icon={icon}
+              description="Marcar OK u Observación"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {items.map((label) => {
+                  const key = toKey(label);
+                  return (
+                    <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
+                      <Select
+                        value={data[section][key]}
+                        onValueChange={(v) =>
+                          setData((prev) => ({
+                            ...prev,
+                            [section]: { ...prev[section], [key]: v as CheckStatus },
+                          }))
+                        }
+                      >
+                        <SelectTrigger id={`${prefix}-${key}`}>
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ok">OK</SelectItem>
+                          <SelectItem value="observacion">Observación</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          ))}
+
           <div className="flex justify-end gap-3 pt-2">
             <Button
               type="button"
