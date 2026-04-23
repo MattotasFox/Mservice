@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench } from "lucide-react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,64 @@ import { FormField } from "@/components/inspection/FormField";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
+type CheckStatus = "" | "ok" | "observacion";
+
+const TREN_MOTRIZ = [
+  "Neumáticos",
+  "Llantas",
+  "Amortiguadores",
+  "Frenos delanteros",
+  "Frenos traseros",
+  "Líquido de frenos",
+  "Revisión fugas líquido de frenos",
+  "Caja de dirección",
+  "Estado homocinéticas",
+];
+
+const MOTOR_ITEMS = [
+  "Revisión ruidos de motor - zona de motor",
+  "Revisión ruidos caja de cambios",
+  "Revisión fugas de aceite",
+  "Revisión correa auxiliar/accesorios",
+  "Nivel/calidad de aceite motor",
+  "Nivel/calidad de aceite líquido refrigerante",
+  "Estado de humo en escape",
+  "Revisión soporte de motor",
+];
+
+const EXTERIOR_ITEMS = [
+  "Puerta delantera izquierda",
+  "Puerta trasera izquierda",
+  "Laterales izquierda",
+  "Espejo izquierdo",
+  "Puerta delantera derecha",
+  "Puerta trasera derecha",
+  "Laterales derecho",
+  "Espejo derecho",
+  "Parachoque trasero",
+  "Maletero",
+  "Luces traseras",
+  "Parachoque delantero",
+  "Frontal/capot",
+  "Luces delanteras",
+  "Techo/sunroof/barras",
+  "Antena",
+  "Vidrios",
+  "Luces complementarias",
+  "Insignias/molduras",
+  "Pintura",
+];
+
+const toKey = (label: string) =>
+  label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+
+const buildCheckRecord = (items: string[]): Record<string, CheckStatus> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: "" as CheckStatus }), {});
 
 const ACCESORIOS: { key: string; label: string }[] = [
   { key: "aireAcondicionado", label: "Aire acondicionado" },
@@ -68,6 +126,9 @@ interface InspectionData {
     seguroObligatorio: DocStatus;
   };
   accesorios: { items: Record<string, AccStatus>; otros: string };
+  trenMotriz: Record<string, CheckStatus>;
+  motor: Record<string, CheckStatus>;
+  exterior: Record<string, CheckStatus>;
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
@@ -106,6 +167,9 @@ const initialData: InspectionData = {
     seguroObligatorio: "",
   },
   accesorios: initialAccesorios,
+  trenMotriz: buildCheckRecord(TREN_MOTRIZ),
+  motor: buildCheckRecord(MOTOR_ITEMS),
+  exterior: buildCheckRecord(EXTERIOR_ITEMS),
 };
 
 const Index = () => {
@@ -469,6 +533,49 @@ const Index = () => {
               </FormField>
             </div>
           </SectionCard>
+
+          {/* Tren motriz */}
+          {(
+            [
+              { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
+              { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
+              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
+            ]
+          ).map(({ title, icon, items, section, prefix }) => (
+            <SectionCard
+              key={section}
+              title={title}
+              icon={icon}
+              description="Marcar OK u Observación"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {items.map((label) => {
+                  const key = toKey(label);
+                  return (
+                    <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
+                      <Select
+                        value={data[section][key]}
+                        onValueChange={(v) =>
+                          setData((prev) => ({
+                            ...prev,
+                            [section]: { ...prev[section], [key]: v as CheckStatus },
+                          }))
+                        }
+                      >
+                        <SelectTrigger id={`${prefix}-${key}`}>
+                          <SelectValue placeholder="Seleccionar" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ok">OK</SelectItem>
+                          <SelectItem value="observacion">Observación</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormField>
+                  );
+                })}
+              </div>
+            </SectionCard>
+          ))}
 
           <div className="flex justify-end gap-3 pt-2">
             <Button
