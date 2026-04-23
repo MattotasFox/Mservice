@@ -429,11 +429,14 @@ const Index = () => {
               {ACCESORIOS.map(({ key, label }) => (
                 <FormField key={key} label={label} htmlFor={`a-${key}`}>
                   <Select
-                    value={data.accesorios[key]}
+                    value={data.accesorios.items[key]}
                     onValueChange={(v) =>
                       setData((prev) => ({
                         ...prev,
-                        accesorios: { ...prev.accesorios, [key]: v as AccStatus },
+                        accesorios: {
+                          ...prev.accesorios,
+                          items: { ...prev.accesorios.items, [key]: v as AccStatus },
+                        },
                       }))
                     }
                   >
