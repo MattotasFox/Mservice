@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench } from "lucide-react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -16,6 +16,64 @@ import { FormField } from "@/components/inspection/FormField";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
+type CheckStatus = "" | "ok" | "observacion";
+
+const TREN_MOTRIZ = [
+  "Neumáticos",
+  "Llantas",
+  "Amortiguadores",
+  "Frenos delanteros",
+  "Frenos traseros",
+  "Líquido de frenos",
+  "Revisión fugas líquido de frenos",
+  "Caja de dirección",
+  "Estado homocinéticas",
+];
+
+const MOTOR_ITEMS = [
+  "Revisión ruidos de motor - zona de motor",
+  "Revisión ruidos caja de cambios",
+  "Revisión fugas de aceite",
+  "Revisión correa auxiliar/accesorios",
+  "Nivel/calidad de aceite motor",
+  "Nivel/calidad de aceite líquido refrigerante",
+  "Estado de humo en escape",
+  "Revisión soporte de motor",
+];
+
+const EXTERIOR_ITEMS = [
+  "Puerta delantera izquierda",
+  "Puerta trasera izquierda",
+  "Laterales izquierda",
+  "Espejo izquierdo",
+  "Puerta delantera derecha",
+  "Puerta trasera derecha",
+  "Laterales derecho",
+  "Espejo derecho",
+  "Parachoque trasero",
+  "Maletero",
+  "Luces traseras",
+  "Parachoque delantero",
+  "Frontal/capot",
+  "Luces delanteras",
+  "Techo/sunroof/barras",
+  "Antena",
+  "Vidrios",
+  "Luces complementarias",
+  "Insignias/molduras",
+  "Pintura",
+];
+
+const toKey = (label: string) =>
+  label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
+
+const buildCheckRecord = (items: string[]): Record<string, CheckStatus> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: "" as CheckStatus }), {});
 
 const ACCESORIOS: { key: string; label: string }[] = [
   { key: "aireAcondicionado", label: "Aire acondicionado" },
