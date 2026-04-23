@@ -126,6 +126,9 @@ interface InspectionData {
     seguroObligatorio: DocStatus;
   };
   accesorios: { items: Record<string, AccStatus>; otros: string };
+  trenMotriz: Record<string, CheckStatus>;
+  motor: Record<string, CheckStatus>;
+  exterior: Record<string, CheckStatus>;
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
@@ -164,6 +167,9 @@ const initialData: InspectionData = {
     seguroObligatorio: "",
   },
   accesorios: initialAccesorios,
+  trenMotriz: buildCheckRecord(TREN_MOTRIZ),
+  motor: buildCheckRecord(MOTOR_ITEMS),
+  exterior: buildCheckRecord(EXTERIOR_ITEMS),
 };
 
 const Index = () => {
