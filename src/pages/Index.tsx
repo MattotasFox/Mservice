@@ -1,7 +1,8 @@
 import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge } from "lucide-react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -12,6 +13,37 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
+
+type DocStatus = "" | "ok" | "atrasado" | "no";
+type AccStatus = "" | "si" | "no" | "na";
+
+const ACCESORIOS: { key: string; label: string }[] = [
+  { key: "aireAcondicionado", label: "Aire acondicionado" },
+  { key: "climatizador", label: "Climatizador" },
+  { key: "vidriosElectricos", label: "Vidrios eléctricos" },
+  { key: "espejosElectricos", label: "Espejos eléctricos" },
+  { key: "cierreCentralizado", label: "Cierre centralizado" },
+  { key: "tapizCuero", label: "Tapiz cuero" },
+  { key: "radioMultimedia", label: "Radio multimedia" },
+  { key: "bluetooth", label: "Bluetooth" },
+  { key: "controlCrucero", label: "Control crucero" },
+  { key: "volanteAjustable", label: "Volante ajustable" },
+  { key: "anclajeIsoFix", label: "Anclaje ISO FIX" },
+  { key: "frenosAbs", label: "Frenos ABS" },
+  { key: "airbag", label: "Airbag" },
+  { key: "controlEstabilidad", label: "Control estabilidad" },
+  { key: "controlTraccion", label: "Control tracción" },
+  { key: "sensorRetroceso", label: "Sensor de retroceso" },
+  { key: "camaraRetroceso", label: "Cámara de retroceso" },
+  { key: "duplicadoLlave", label: "Duplicado llave" },
+  { key: "antena", label: "Antena" },
+  { key: "llaveRueda", label: "Llave de rueda" },
+  { key: "herramientas", label: "Herramientas" },
+  { key: "ruedaRepuesto", label: "Rueda de repuesto" },
+  { key: "kitEmergencia", label: "Kit de emergencia" },
+  { key: "manualUsuario", label: "Manual de usuario" },
+  { key: "extintor", label: "Extintor" },
+];
 
 interface InspectionData {
   cliente: { nombre: string; rut: string; email: string; telefono: string };
@@ -30,7 +62,18 @@ interface InspectionData {
     transmision: string;
     traccion: string;
   };
+  documentacion: {
+    permisoCirculacion: DocStatus;
+    revisionTecnica: DocStatus;
+    seguroObligatorio: DocStatus;
+  };
+  accesorios: Record<string, AccStatus> & { otros: string };
 }
+
+const initialAccesorios = ACCESORIOS.reduce(
+  (acc, { key }) => ({ ...acc, [key]: "" as AccStatus }),
+  { otros: "" } as Record<string, AccStatus> & { otros: string }
+);
 
 const initialData: InspectionData = {
   cliente: { nombre: "", rut: "", email: "", telefono: "" },
@@ -54,6 +97,12 @@ const initialData: InspectionData = {
     transmision: "",
     traccion: "",
   },
+  documentacion: {
+    permisoCirculacion: "",
+    revisionTecnica: "",
+    seguroObligatorio: "",
+  },
+  accesorios: initialAccesorios,
 };
 
 const Index = () => {
@@ -330,6 +379,87 @@ const Index = () => {
                     <SelectItem value="4wd">4x4 (4WD)</SelectItem>
                   </SelectContent>
                 </Select>
+              </FormField>
+            </div>
+          </SectionCard>
+
+          {/* Documentación del vehículo */}
+          <SectionCard
+            title="Documentación del Vehículo"
+            icon={FileText}
+            description="Estado de los documentos legales"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {[
+                { key: "permisoCirculacion", label: "Permiso de circulación" },
+                { key: "revisionTecnica", label: "Revisión técnica" },
+                { key: "seguroObligatorio", label: "Seguro obligatorio" },
+              ].map(({ key, label }) => (
+                <FormField key={key} label={label} htmlFor={`d-${key}`}>
+                  <Select
+                    value={data.documentacion[key as keyof typeof data.documentacion]}
+                    onValueChange={(v) =>
+                      update("documentacion", key as keyof typeof data.documentacion, v)
+                    }
+                  >
+                    <SelectTrigger id={`d-${key}`}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="ok">OK</SelectItem>
+                      <SelectItem value="atrasado">Atrasado</SelectItem>
+                      <SelectItem value="no">NO</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ))}
+            </div>
+          </SectionCard>
+
+          {/* Equipamiento / Accesorios */}
+          <SectionCard
+            title="Equipamiento / Accesorios"
+            icon={Wrench}
+            description="Estado del equipamiento del vehículo"
+          >
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {ACCESORIOS.map(({ key, label }) => (
+                <FormField key={key} label={label} htmlFor={`a-${key}`}>
+                  <Select
+                    value={data.accesorios[key]}
+                    onValueChange={(v) =>
+                      setData((prev) => ({
+                        ...prev,
+                        accesorios: { ...prev.accesorios, [key]: v as AccStatus },
+                      }))
+                    }
+                  >
+                    <SelectTrigger id={`a-${key}`}>
+                      <SelectValue placeholder="Seleccionar" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="si">SI</SelectItem>
+                      <SelectItem value="no">NO</SelectItem>
+                      <SelectItem value="na">N/A</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+              ))}
+            </div>
+            <div className="mt-5">
+              <FormField label="Otros" htmlFor="a-otros">
+                <Textarea
+                  id="a-otros"
+                  value={data.accesorios.otros}
+                  onChange={(e) =>
+                    setData((prev) => ({
+                      ...prev,
+                      accesorios: { ...prev.accesorios, otros: e.target.value },
+                    }))
+                  }
+                  placeholder="Todo su equipamiento en buen estado"
+                  rows={3}
+                />
               </FormField>
             </div>
           </SectionCard>
