@@ -554,7 +554,7 @@ const Index = () => {
                   return (
                     <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
                       <Select
-                        value={data[section][key]}
+                        value={data[section]?.[key] ?? ""}
                         onValueChange={(v) =>
                           setData((prev) => ({
                             ...prev,
