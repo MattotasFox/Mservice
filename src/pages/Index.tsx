@@ -67,13 +67,16 @@ interface InspectionData {
     revisionTecnica: DocStatus;
     seguroObligatorio: DocStatus;
   };
-  accesorios: Record<string, AccStatus> & { otros: string };
+  accesorios: { items: Record<string, AccStatus>; otros: string };
 }
 
-const initialAccesorios = ACCESORIOS.reduce(
-  (acc, { key }) => ({ ...acc, [key]: "" as AccStatus }),
-  { otros: "" } as Record<string, AccStatus> & { otros: string }
-);
+const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
+  items: ACCESORIOS.reduce(
+    (acc, { key }) => ({ ...acc, [key]: "" as AccStatus }),
+    {} as Record<string, AccStatus>
+  ),
+  otros: "",
+};
 
 const initialData: InspectionData = {
   cliente: { nombre: "", rut: "", email: "", telefono: "" },
