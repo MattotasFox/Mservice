@@ -156,11 +156,14 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
     doc.addPage();
     cursorY = margin;
   }
-  doc.text(obsLines, margin, cursorY);
+  doc.text(obsLines, margin, cursorY + 10);
   cursorY += obsLines.length * 12 + 14;
 
   // Conclusión
   sectionTitle("Conclusión");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(15, 23, 42);
   const concLines = doc.splitTextToSize(
     data.conclusion || "—",
     pageWidth - margin * 2
@@ -169,7 +172,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
     doc.addPage();
     cursorY = margin;
   }
-  doc.text(concLines, margin, cursorY);
+  doc.text(concLines, margin, cursorY + 10);
   cursorY += concLines.length * 12 + 14;
 
   // Imágenes
