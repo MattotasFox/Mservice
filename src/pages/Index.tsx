@@ -64,6 +64,45 @@ const EXTERIOR_ITEMS = [
   "Pintura",
 ];
 
+const INTERIOR_ITEMS = [
+  "Estado de llaves (control/apertura)",
+  "Encendido de motor",
+  "Testigos en tablero",
+  "Comportamiento en relenti",
+  "Pedal de freno",
+  "Pedal de aceleración",
+  "Pedal embrague",
+  "Cierre centralizado",
+  "Alzavidrios",
+  "Espejos",
+  "Grabado de vidrios/espejos",
+  "Luces interior",
+  "Comandos al volante",
+  "Luces/señalizadores",
+  "Limpiaparabrisas",
+  "Equipo multimedia/radio",
+  "Sensores",
+  "Cámara de retroceso",
+  "Tapiz asientos",
+  "Tapiz habitáculo",
+  "Ajustes de asientos",
+  "Cinturones de seguridad",
+  "Estado de guantera",
+  "Estado de maletero",
+  "Neumático repuesto",
+  "Herramientas del auto",
+  "Elementos de seguridad",
+];
+
+const OTROS_ITEMS = [
+  "Resultado del scanner",
+  "Funcionamiento de alarma y cierre centralizado",
+  "Estado de batería (apagado)",
+  "Estado de batería (encendido)",
+  "Alternador",
+  "Kilometraje verificado",
+];
+
 const toKey = (label: string) =>
   label
     .toLowerCase()
