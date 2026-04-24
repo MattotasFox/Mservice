@@ -249,7 +249,7 @@ const Index = () => {
   ) => {
     setData((prev) => ({
       ...prev,
-      [section]: { ...prev[section], [field]: value },
+      [section]: { ...(prev[section] as object), [field]: value },
     }));
   };
 
