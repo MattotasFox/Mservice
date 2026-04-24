@@ -1,5 +1,6 @@
 import { useState, FormEvent, useRef, ChangeEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
+import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
+import { generateInspectionPdf } from "@/lib/generatePdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -272,13 +273,30 @@ const Index = () => {
     }));
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    toast({
-      title: "Inspección guardada",
-      description: `Vehículo ${data.vehiculo.patente || "sin patente"} registrado correctamente.`,
-    });
-    console.log("Inspección:", data);
+    try {
+      await generateInspectionPdf(data, {
+        trenMotriz: TREN_MOTRIZ,
+        motor: MOTOR_ITEMS,
+        exterior: EXTERIOR_ITEMS,
+        interior: INTERIOR_ITEMS,
+        otros: OTROS_ITEMS,
+        pruebaRuta: PRUEBA_RUTA_ITEMS,
+        accesorios: ACCESORIOS,
+        toKey,
+      });
+      toast({
+        title: "Informe generado",
+        description: `PDF descargado para vehículo ${data.vehiculo.patente || "sin patente"}.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({
+        title: "Error al generar el informe",
+        description: "Revisa la consola para más detalles.",
+      });
+    }
   };
 
   return (
@@ -754,8 +772,8 @@ const Index = () => {
               Limpiar
             </Button>
             <Button type="submit" size="lg" className="gap-2 shadow-[var(--shadow-elegant)]">
-              <Save className="h-4 w-4" />
-              Guardar inspección
+              <FileDown className="h-4 w-4" />
+              Generar informe
             </Button>
           </div>
         </form>
