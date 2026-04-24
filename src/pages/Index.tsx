@@ -1,5 +1,5 @@
-import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks } from "lucide-react";
+import { useState, FormEvent, useRef, ChangeEvent } from "react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,6 +103,22 @@ const OTROS_ITEMS = [
   "Kilometraje verificado",
 ];
 
+const PRUEBA_RUTA_ITEMS = [
+  "Alineación",
+  "Comportamiento de caja de cambios",
+  "Embrague",
+  "Comportamiento/ruidos dirección",
+  "Frenos",
+  "Temperatura motor",
+  "Comportamiento motor (ruidos/potencia)",
+  "Testigos en tablero",
+  "Velocidad crucero",
+  "Comportamiento suspensión",
+  "Funcionamiento 4x4",
+  "Funcionamiento turbo",
+  "Ruidos dentro de habitáculo",
+];
+
 const toKey = (label: string) =>
   label
     .toLowerCase()
@@ -170,6 +186,10 @@ interface InspectionData {
   exterior: Record<string, CheckStatus>;
   interior: Record<string, CheckStatus>;
   otros: Record<string, CheckStatus>;
+  pruebaRuta: Record<string, CheckStatus>;
+  observaciones: string;
+  conclusion: string;
+  imagenes: { name: string; url: string }[];
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
@@ -213,6 +233,10 @@ const initialData: InspectionData = {
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
   interior: buildCheckRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
+  pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
+  observaciones: "",
+  conclusion: "",
+  imagenes: [],
 };
 
 const Index = () => {
