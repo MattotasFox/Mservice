@@ -1,5 +1,5 @@
 import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye } from "lucide-react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,6 +62,45 @@ const EXTERIOR_ITEMS = [
   "Luces complementarias",
   "Insignias/molduras",
   "Pintura",
+];
+
+const INTERIOR_ITEMS = [
+  "Estado de llaves (control/apertura)",
+  "Encendido de motor",
+  "Testigos en tablero",
+  "Comportamiento en relenti",
+  "Pedal de freno",
+  "Pedal de aceleración",
+  "Pedal embrague",
+  "Cierre centralizado",
+  "Alzavidrios",
+  "Espejos",
+  "Grabado de vidrios/espejos",
+  "Luces interior",
+  "Comandos al volante",
+  "Luces/señalizadores",
+  "Limpiaparabrisas",
+  "Equipo multimedia/radio",
+  "Sensores",
+  "Cámara de retroceso",
+  "Tapiz asientos",
+  "Tapiz habitáculo",
+  "Ajustes de asientos",
+  "Cinturones de seguridad",
+  "Estado de guantera",
+  "Estado de maletero",
+  "Neumático repuesto",
+  "Herramientas del auto",
+  "Elementos de seguridad",
+];
+
+const OTROS_ITEMS = [
+  "Resultado del scanner",
+  "Funcionamiento de alarma y cierre centralizado",
+  "Estado de batería (apagado)",
+  "Estado de batería (encendido)",
+  "Alternador",
+  "Kilometraje verificado",
 ];
 
 const toKey = (label: string) =>
@@ -129,6 +168,8 @@ interface InspectionData {
   trenMotriz: Record<string, CheckStatus>;
   motor: Record<string, CheckStatus>;
   exterior: Record<string, CheckStatus>;
+  interior: Record<string, CheckStatus>;
+  otros: Record<string, CheckStatus>;
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
@@ -170,6 +211,8 @@ const initialData: InspectionData = {
   trenMotriz: buildCheckRecord(TREN_MOTRIZ),
   motor: buildCheckRecord(MOTOR_ITEMS),
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
+  interior: buildCheckRecord(INTERIOR_ITEMS),
+  otros: buildCheckRecord(OTROS_ITEMS),
 };
 
 const Index = () => {
@@ -540,6 +583,8 @@ const Index = () => {
               { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
               { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
               { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
+              { title: "Interior", icon: Armchair, items: INTERIOR_ITEMS, section: "interior" as const, prefix: "in" },
+              { title: "Otros", icon: ListChecks, items: OTROS_ITEMS, section: "otros" as const, prefix: "ot" },
             ]
           ).map(({ title, icon, items, section, prefix }) => (
             <SectionCard
