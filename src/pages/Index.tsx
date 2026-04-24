@@ -772,8 +772,8 @@ const Index = () => {
               Limpiar
             </Button>
             <Button type="submit" size="lg" className="gap-2 shadow-[var(--shadow-elegant)]">
-              <Save className="h-4 w-4" />
-              Guardar inspección
+              <FileDown className="h-4 w-4" />
+              Generar informe
             </Button>
           </div>
         </form>
