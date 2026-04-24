@@ -168,6 +168,8 @@ interface InspectionData {
   trenMotriz: Record<string, CheckStatus>;
   motor: Record<string, CheckStatus>;
   exterior: Record<string, CheckStatus>;
+  interior: Record<string, CheckStatus>;
+  otros: Record<string, CheckStatus>;
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
