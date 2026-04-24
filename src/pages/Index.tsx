@@ -1,5 +1,5 @@
-import { useState, FormEvent } from "react";
-import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks } from "lucide-react";
+import { useState, FormEvent, useRef, ChangeEvent } from "react";
+import { Car, User, ClipboardCheck, Save, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -103,6 +103,22 @@ const OTROS_ITEMS = [
   "Kilometraje verificado",
 ];
 
+const PRUEBA_RUTA_ITEMS = [
+  "Alineación",
+  "Comportamiento de caja de cambios",
+  "Embrague",
+  "Comportamiento/ruidos dirección",
+  "Frenos",
+  "Temperatura motor",
+  "Comportamiento motor (ruidos/potencia)",
+  "Testigos en tablero",
+  "Velocidad crucero",
+  "Comportamiento suspensión",
+  "Funcionamiento 4x4",
+  "Funcionamiento turbo",
+  "Ruidos dentro de habitáculo",
+];
+
 const toKey = (label: string) =>
   label
     .toLowerCase()
@@ -170,6 +186,10 @@ interface InspectionData {
   exterior: Record<string, CheckStatus>;
   interior: Record<string, CheckStatus>;
   otros: Record<string, CheckStatus>;
+  pruebaRuta: Record<string, CheckStatus>;
+  observaciones: string;
+  conclusion: string;
+  imagenes: { name: string; url: string }[];
 }
 
 const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
@@ -213,6 +233,10 @@ const initialData: InspectionData = {
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
   interior: buildCheckRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
+  pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
+  observaciones: "",
+  conclusion: "",
+  imagenes: [],
 };
 
 const Index = () => {
@@ -225,7 +249,26 @@ const Index = () => {
   ) => {
     setData((prev) => ({
       ...prev,
-      [section]: { ...prev[section], [field]: value },
+      [section]: { ...(prev[section] as object), [field]: value },
+    }));
+  };
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    const newImages = files.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+    setData((prev) => ({ ...prev, imagenes: [...prev.imagenes, ...newImages] }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      imagenes: prev.imagenes.filter((_, i) => i !== index),
     }));
   };
 
@@ -585,6 +628,7 @@ const Index = () => {
               { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Interior", icon: Armchair, items: INTERIOR_ITEMS, section: "interior" as const, prefix: "in" },
               { title: "Otros", icon: ListChecks, items: OTROS_ITEMS, section: "otros" as const, prefix: "ot" },
+              { title: "Prueba en ruta", icon: Route, items: PRUEBA_RUTA_ITEMS, section: "pruebaRuta" as const, prefix: "pr" },
             ]
           ).map(({ title, icon, items, section, prefix }) => (
             <SectionCard
@@ -621,6 +665,85 @@ const Index = () => {
               </div>
             </SectionCard>
           ))}
+
+          {/* Observaciones */}
+          <SectionCard
+            title="Observaciones"
+            icon={MessageSquare}
+            description="Detalles y observaciones de la inspección"
+          >
+            <Textarea
+              value={data.observaciones}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, observaciones: e.target.value }))
+              }
+              rows={6}
+            />
+          </SectionCard>
+
+          {/* Conclusión */}
+          <SectionCard
+            title="Conclusión"
+            icon={ClipboardCheck}
+            description="Conclusión final de la inspección"
+          >
+            <Textarea
+              value={data.conclusion}
+              onChange={(e) =>
+                setData((prev) => ({ ...prev, conclusion: e.target.value }))
+              }
+              rows={5}
+            />
+          </SectionCard>
+
+          {/* Imágenes de respaldo */}
+          <SectionCard
+            title="Imágenes de respaldo"
+            icon={Images}
+            description="Adjuntar fotografías de la inspección"
+          >
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              className="hidden"
+            />
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => fileInputRef.current?.click()}
+              className="gap-2"
+            >
+              <Upload className="h-4 w-4" />
+              Subir imágenes
+            </Button>
+            {data.imagenes.length > 0 && (
+              <div className="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {data.imagenes.map((img, i) => (
+                  <div
+                    key={i}
+                    className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
+                  >
+                    <img
+                      src={img.url}
+                      alt={img.name}
+                      className="h-full w-full object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
+                      aria-label="Eliminar imagen"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </SectionCard>
 
           <div className="flex justify-end gap-3 pt-2">
             <Button
