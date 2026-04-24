@@ -1,4 +1,4 @@
-import { useState, FormEvent, useRef, ChangeEvent } from "react";
+import { useState, type FormEvent, useRef, type ChangeEvent } from "react";
 import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
 import { Button } from "@/components/ui/button";
