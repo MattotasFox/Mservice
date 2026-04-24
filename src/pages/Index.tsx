@@ -211,6 +211,8 @@ const initialData: InspectionData = {
   trenMotriz: buildCheckRecord(TREN_MOTRIZ),
   motor: buildCheckRecord(MOTOR_ITEMS),
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
+  interior: buildCheckRecord(INTERIOR_ITEMS),
+  otros: buildCheckRecord(OTROS_ITEMS),
 };
 
 const Index = () => {
