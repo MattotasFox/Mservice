@@ -253,6 +253,25 @@ const Index = () => {
     }));
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    const newImages = files.map((file) => ({
+      name: file.name,
+      url: URL.createObjectURL(file),
+    }));
+    setData((prev) => ({ ...prev, imagenes: [...prev.imagenes, ...newImages] }));
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setData((prev) => ({
+      ...prev,
+      imagenes: prev.imagenes.filter((_, i) => i !== index),
+    }));
+  };
+
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     toast({
