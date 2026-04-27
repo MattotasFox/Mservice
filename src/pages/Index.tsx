@@ -1,5 +1,5 @@
 import { useState, type FormEvent, useRef, type ChangeEvent } from "react";
-import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X } from "lucide-react";
+import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X, Save, ArrowLeft } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,8 @@ import {
 import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
+import { InspectionsList } from "@/components/inspection/InspectionsList";
+import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
@@ -241,7 +243,48 @@ const initialData: InspectionData = {
 };
 
 const Index = () => {
+  const [view, setView] = useState<"list" | "edit">("list");
+  const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<InspectionData>(initialData);
+
+  const handleNew = () => {
+    setCurrentId(newId());
+    setData(initialData);
+    setView("edit");
+  };
+
+  const handleOpen = (id: string) => {
+    const stored = getInspection(id);
+    if (!stored) {
+      toast({ title: "Inspección no encontrada" });
+      return;
+    }
+    setCurrentId(id);
+    setData(stored.data as InspectionData);
+    setView("edit");
+  };
+
+  const handleBack = () => {
+    setView("list");
+    setCurrentId(null);
+  };
+
+  const handleSave = () => {
+    if (!currentId) return;
+    const patente = data.vehiculo.patente.trim();
+    if (!patente) {
+      toast({
+        title: "Patente requerida",
+        description: "Ingresa la patente del vehículo para guardar la inspección.",
+      });
+      return;
+    }
+    saveInspection(currentId, patente, data);
+    toast({
+      title: "Inspección guardada",
+      description: `Se guardó la inspección de ${patente}.`,
+    });
+  };
 
   const update = <S extends keyof InspectionData>(
     section: S,
@@ -299,21 +342,38 @@ const Index = () => {
     }
   };
 
+  if (view === "list") {
+    return <InspectionsList onNew={handleNew} onOpen={handleOpen} />;
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-[image:var(--gradient-hero)] text-primary-foreground">
         <div className="container max-w-5xl py-10">
-          <div className="flex items-center gap-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur">
-              <Gauge className="h-7 w-7" />
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur">
+                <Gauge className="h-7 w-7" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold tracking-tight">Inspección de Vehículos</h1>
+                <p className="text-primary-foreground/80 mt-1">
+                  {data.vehiculo.patente
+                    ? `Editando: ${data.vehiculo.patente}`
+                    : "Registro detallado de inspección técnica"}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Inspección de Vehículos</h1>
-              <p className="text-primary-foreground/80 mt-1">
-                Registro detallado de inspección técnica
-              </p>
-            </div>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleBack}
+              className="gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Volver
+            </Button>
           </div>
         </div>
       </header>
@@ -763,13 +823,22 @@ const Index = () => {
             )}
           </SectionCard>
 
-          <div className="flex justify-end gap-3 pt-2">
+          <div className="flex flex-wrap justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setData(initialData)}
             >
               Limpiar
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleSave}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" />
+              Guardar inspección
             </Button>
             <Button type="submit" size="lg" className="gap-2 shadow-[var(--shadow-elegant)]">
               <FileDown className="h-4 w-4" />
