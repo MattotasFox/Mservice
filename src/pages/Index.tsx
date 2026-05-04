@@ -732,13 +732,47 @@ const Index = () => {
             </div>
           </SectionCard>
 
-          {/* Tren motriz */}
+          {/* Secciones con imagen + observación por campo */}
           {(
             [
               { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
               { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
-              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Interior", icon: Armchair, items: INTERIOR_ITEMS, section: "interior" as const, prefix: "in" },
+            ]
+          ).map(({ title, icon, items, section, prefix }) => (
+            <SectionCard
+              key={section}
+              title={title}
+              icon={icon}
+              description="Marcar OK u Observación, adjuntar imagen y notas"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {items.map((label) => {
+                  const key = toKey(label);
+                  const entry = (data[section]?.[key] as CheckEntry) ?? emptyCheckEntry;
+                  return (
+                    <CheckFieldWithImage
+                      key={key}
+                      id={`${prefix}-${key}`}
+                      label={label}
+                      value={entry}
+                      onChange={(next) =>
+                        setData((prev) => ({
+                          ...prev,
+                          [section]: { ...prev[section], [key]: next },
+                        }))
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </SectionCard>
+          ))}
+
+          {/* Secciones simples (solo OK / Observación) */}
+          {(
+            [
+              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Otros", icon: ListChecks, items: OTROS_ITEMS, section: "otros" as const, prefix: "ot" },
               { title: "Prueba en ruta", icon: Route, items: PRUEBA_RUTA_ITEMS, section: "pruebaRuta" as const, prefix: "pr" },
             ]
@@ -755,7 +789,7 @@ const Index = () => {
                   return (
                     <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
                       <Select
-                        value={data[section]?.[key] ?? ""}
+                        value={(data[section]?.[key] as CheckStatus) ?? ""}
                         onValueChange={(v) =>
                           setData((prev) => ({
                             ...prev,
