@@ -9,8 +9,11 @@ const labelMaps: Record<string, Record<string, string>> = {
   check: { ok: "OK", observacion: "Observación", "": "—" },
 };
 
-const fmt = (v: string, kind: "doc" | "acc" | "check" | "text" = "text") => {
-  if (kind === "text") return v && v.trim() !== "" ? v : "—";
+const fmt = (v: any, kind: "doc" | "acc" | "check" | "text" = "text") => {
+  if (kind === "text") return v && String(v).trim() !== "" ? v : "—";
+  if (kind === "check" && v && typeof v === "object") {
+    return labelMaps.check[v.status ?? ""] ?? "—";
+  }
   return labelMaps[kind][v] ?? "—";
 };
 
