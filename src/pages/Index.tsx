@@ -192,7 +192,7 @@ interface InspectionData {
   accesorios: { items: Record<string, AccStatus>; otros: string };
   trenMotriz: Record<string, CheckEntry>;
   motor: Record<string, CheckEntry>;
-  exterior: Record<string, CheckStatus>;
+  exterior: Record<string, CheckEntry>;
   interior: Record<string, CheckEntry>;
   otros: Record<string, CheckStatus>;
   pruebaRuta: Record<string, CheckStatus>;
