@@ -66,26 +66,11 @@ const MOTOR_ITEMS = [
 ];
 
 const EXTERIOR_ITEMS = [
-  "Puerta delantera izquierda",
-  "Puerta trasera izquierda",
-  "Laterales izquierda",
-  "Espejo izquierdo",
-  "Puerta delantera derecha",
-  "Puerta trasera derecha",
-  "Laterales derecho",
-  "Espejo derecho",
-  "Parachoque trasero",
-  "Maletero",
-  "Luces traseras",
-  "Parachoque delantero",
-  "Frontal/capot",
-  "Luces delanteras",
-  "Techo/sunroof/barras",
-  "Antena",
-  "Vidrios",
-  "Luces complementarias",
-  "Insignias/molduras",
-  "Pintura",
+  "Frontal",
+  "Costado derecho",
+  "Costado izquierdo",
+  "Trasera",
+  "Techo",
 ];
 
 const INTERIOR_ITEMS = [
