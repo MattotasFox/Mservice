@@ -205,10 +205,10 @@ interface InspectionData {
     seguroObligatorio: DocStatus;
   };
   accesorios: { items: Record<string, AccStatus>; otros: string };
-  trenMotriz: Record<string, CheckStatus>;
-  motor: Record<string, CheckStatus>;
+  trenMotriz: Record<string, CheckEntry>;
+  motor: Record<string, CheckEntry>;
   exterior: Record<string, CheckStatus>;
-  interior: Record<string, CheckStatus>;
+  interior: Record<string, CheckEntry>;
   otros: Record<string, CheckStatus>;
   pruebaRuta: Record<string, CheckStatus>;
   observaciones: string;
