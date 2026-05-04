@@ -15,11 +15,32 @@ import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
 import { InspectionsList } from "@/components/inspection/InspectionsList";
+import {
+  CheckFieldWithImage,
+  emptyCheckEntry,
+  type CheckEntry,
+} from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
 type CheckStatus = "" | "ok" | "observacion";
+
+const buildCheckEntryRecord = (items: string[]): Record<string, CheckEntry> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { ...emptyCheckEntry } }), {});
+
+// Migrate old string-based values to CheckEntry shape
+const migrateToEntry = (raw: any): CheckEntry => {
+  if (!raw) return { ...emptyCheckEntry };
+  if (typeof raw === "string") {
+    return { status: (raw as CheckEntry["status"]) || "", observacion: "", imagen: null };
+  }
+  return {
+    status: raw.status ?? "",
+    observacion: raw.observacion ?? "",
+    imagen: raw.imagen ?? null,
+  };
+};
 
 const TREN_MOTRIZ = [
   "Neumáticos",
