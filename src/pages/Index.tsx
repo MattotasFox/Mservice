@@ -239,7 +239,7 @@ const initialData: InspectionData = {
   accesorios: initialAccesorios,
   trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
   motor: buildCheckEntryRecord(MOTOR_ITEMS),
-  exterior: buildCheckRecord(EXTERIOR_ITEMS),
+  exterior: buildCheckEntryRecord(EXTERIOR_ITEMS),
   interior: buildCheckEntryRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
   pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
