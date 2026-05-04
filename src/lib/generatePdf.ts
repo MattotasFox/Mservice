@@ -248,38 +248,6 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   doc.text(concLines, margin, cursorY + 10);
   cursorY += concLines.length * 12 + 14;
 
-  // Imágenes
-  if (data.imagenes && data.imagenes.length > 0) {
-    sectionTitle("Imágenes de Respaldo");
-    const imgWidth = (pageWidth - margin * 2 - 10) / 2;
-    const imgHeight = imgWidth * 0.75;
-
-    for (let i = 0; i < data.imagenes.length; i++) {
-      const img = data.imagenes[i];
-      const col = i % 2;
-      const x = margin + col * (imgWidth + 10);
-
-      if (col === 0 && cursorY + imgHeight > pageHeight - margin) {
-        doc.addPage();
-        cursorY = margin;
-      }
-
-      try {
-        const dataUrl = await loadImageAsDataUrl(img.url);
-        const fmtType = dataUrl.includes("image/png") ? "PNG" : "JPEG";
-        doc.addImage(dataUrl, fmtType, x, cursorY, imgWidth, imgHeight, undefined, "FAST");
-      } catch (e) {
-        doc.setFontSize(9);
-        doc.setTextColor(120, 120, 120);
-        doc.text(`No se pudo cargar: ${img.name}`, x, cursorY + 10);
-      }
-
-      if (col === 1 || i === data.imagenes.length - 1) {
-        cursorY += imgHeight + 10;
-      }
-    }
-  }
-
   // Footer page numbers
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
