@@ -281,7 +281,20 @@ const Index = () => {
       return;
     }
     setCurrentId(id);
-    setData(stored.data as InspectionData);
+    const raw = stored.data as any;
+    const migrated: InspectionData = {
+      ...(raw as InspectionData),
+      trenMotriz: Object.fromEntries(
+        TREN_MOTRIZ.map((l) => [toKey(l), migrateToEntry(raw?.trenMotriz?.[toKey(l)])])
+      ),
+      motor: Object.fromEntries(
+        MOTOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.motor?.[toKey(l)])])
+      ),
+      interior: Object.fromEntries(
+        INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
+      ),
+    };
+    setData(migrated);
     setView("edit");
   };
 
