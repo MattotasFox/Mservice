@@ -66,26 +66,11 @@ const MOTOR_ITEMS = [
 ];
 
 const EXTERIOR_ITEMS = [
-  "Puerta delantera izquierda",
-  "Puerta trasera izquierda",
-  "Laterales izquierda",
-  "Espejo izquierdo",
-  "Puerta delantera derecha",
-  "Puerta trasera derecha",
-  "Laterales derecho",
-  "Espejo derecho",
-  "Parachoque trasero",
-  "Maletero",
-  "Luces traseras",
-  "Parachoque delantero",
-  "Frontal/capot",
-  "Luces delanteras",
-  "Techo/sunroof/barras",
-  "Antena",
-  "Vidrios",
-  "Luces complementarias",
-  "Insignias/molduras",
-  "Pintura",
+  "Frontal",
+  "Costado derecho",
+  "Costado izquierdo",
+  "Trasera",
+  "Techo",
 ];
 
 const INTERIOR_ITEMS = [
@@ -207,7 +192,7 @@ interface InspectionData {
   accesorios: { items: Record<string, AccStatus>; otros: string };
   trenMotriz: Record<string, CheckEntry>;
   motor: Record<string, CheckEntry>;
-  exterior: Record<string, CheckStatus>;
+  exterior: Record<string, CheckEntry>;
   interior: Record<string, CheckEntry>;
   otros: Record<string, CheckStatus>;
   pruebaRuta: Record<string, CheckStatus>;
@@ -254,7 +239,7 @@ const initialData: InspectionData = {
   accesorios: initialAccesorios,
   trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
   motor: buildCheckEntryRecord(MOTOR_ITEMS),
-  exterior: buildCheckRecord(EXTERIOR_ITEMS),
+  exterior: buildCheckEntryRecord(EXTERIOR_ITEMS),
   interior: buildCheckEntryRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
   pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
@@ -292,6 +277,9 @@ const Index = () => {
       ),
       interior: Object.fromEntries(
         INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
+      ),
+      exterior: Object.fromEntries(
+        EXTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.exterior?.[toKey(l)])])
       ),
     };
     setData(migrated);
@@ -738,6 +726,7 @@ const Index = () => {
               { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
               { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
               { title: "Interior", icon: Armchair, items: INTERIOR_ITEMS, section: "interior" as const, prefix: "in" },
+              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
             ]
           ).map(({ title, icon, items, section, prefix }) => (
             <SectionCard
@@ -772,7 +761,6 @@ const Index = () => {
           {/* Secciones simples (solo OK / Observación) */}
           {(
             [
-              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Otros", icon: ListChecks, items: OTROS_ITEMS, section: "otros" as const, prefix: "ot" },
               { title: "Prueba en ruta", icon: Route, items: PRUEBA_RUTA_ITEMS, section: "pruebaRuta" as const, prefix: "pr" },
             ]
@@ -842,54 +830,7 @@ const Index = () => {
             />
           </SectionCard>
 
-          {/* Imágenes de respaldo */}
-          <SectionCard
-            title="Imágenes de respaldo"
-            icon={Images}
-            description="Adjuntar fotografías de la inspección"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Subir imágenes
-            </Button>
-            {data.imagenes.length > 0 && (
-              <div className="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {data.imagenes.map((img, i) => (
-                  <div
-                    key={i}
-                    className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.name}
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Eliminar imagen"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
+
 
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <Button
