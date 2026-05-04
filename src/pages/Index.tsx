@@ -830,54 +830,7 @@ const Index = () => {
             />
           </SectionCard>
 
-          {/* Imágenes de respaldo */}
-          <SectionCard
-            title="Imágenes de respaldo"
-            icon={Images}
-            description="Adjuntar fotografías de la inspección"
-          >
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => fileInputRef.current?.click()}
-              className="gap-2"
-            >
-              <Upload className="h-4 w-4" />
-              Subir imágenes
-            </Button>
-            {data.imagenes.length > 0 && (
-              <div className="mt-5 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                {data.imagenes.map((img, i) => (
-                  <div
-                    key={i}
-                    className="group relative aspect-square overflow-hidden rounded-lg border border-border bg-muted"
-                  >
-                    <img
-                      src={img.url}
-                      alt={img.name}
-                      className="h-full w-full object-cover"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-2 right-2 flex h-7 w-7 items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 group-hover:opacity-100 transition-opacity"
-                      aria-label="Eliminar imagen"
-                    >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-          </SectionCard>
+
 
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <Button
