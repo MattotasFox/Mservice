@@ -211,7 +211,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
 
   await checkSectionWithExtras("Tren Motriz", dictionaries.trenMotriz, "trenMotriz");
   await checkSectionWithExtras("Motor", dictionaries.motor, "motor");
-  checkSection("Exterior", dictionaries.exterior, "exterior");
+  await checkSectionWithExtras("Exterior", dictionaries.exterior, "exterior");
   await checkSectionWithExtras("Interior", dictionaries.interior, "interior");
   checkSection("Otros", dictionaries.otros, "otros");
   checkSection("Prueba en Ruta", dictionaries.pruebaRuta, "pruebaRuta");
