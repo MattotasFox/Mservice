@@ -9,8 +9,11 @@ const labelMaps: Record<string, Record<string, string>> = {
   check: { ok: "OK", observacion: "Observación", "": "—" },
 };
 
-const fmt = (v: string, kind: "doc" | "acc" | "check" | "text" = "text") => {
-  if (kind === "text") return v && v.trim() !== "" ? v : "—";
+const fmt = (v: any, kind: "doc" | "acc" | "check" | "text" = "text") => {
+  if (kind === "text") return v && String(v).trim() !== "" ? v : "—";
+  if (kind === "check" && v && typeof v === "object") {
+    return labelMaps.check[v.status ?? ""] ?? "—";
+  }
   return labelMaps[kind][v] ?? "—";
 };
 
@@ -128,7 +131,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   accRows.push(["Otros", fmt(data.accesorios.otros)]);
   renderTable(accRows);
 
-  // Check sections helper
+  // Check sections helper (simple)
   const checkSection = (title: string, items: string[], section: string) => {
     sectionTitle(title);
     renderTable(
@@ -136,10 +139,80 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
     );
   };
 
-  checkSection("Tren Motriz", dictionaries.trenMotriz, "trenMotriz");
-  checkSection("Motor", dictionaries.motor, "motor");
+  // Check sections con observación + imagen por campo
+  const checkSectionWithExtras = async (title: string, items: string[], section: string) => {
+    sectionTitle(title);
+    const rows = items.map((label) => {
+      const entry = data[section]?.[dictionaries.toKey(label)] ?? {};
+      const status = labelMaps.check[entry.status ?? ""] ?? "—";
+      const obs = entry.observacion && entry.observacion.trim() !== "" ? entry.observacion : "—";
+      const hasImg = entry.imagen ? "Sí" : "No";
+      return [label, status, obs, hasImg];
+    });
+    autoTable(doc, {
+      startY: cursorY,
+      head: [["Campo", "Estado", "Observación", "Imagen"]],
+      body: rows,
+      margin: { left: margin, right: margin },
+      styles: { fontSize: 9, cellPadding: 5 },
+      headStyles: { fillColor: [51, 65, 85], textColor: 255 },
+      alternateRowStyles: { fillColor: [248, 250, 252] },
+      columnStyles: {
+        0: { cellWidth: 150, fontStyle: "bold" },
+        1: { cellWidth: 70 },
+        3: { cellWidth: 50 },
+      },
+    });
+    cursorY = (doc as any).lastAutoTable.finalY + 14;
+
+    // Render images attached to fields
+    const withImages = items
+      .map((label) => ({ label, entry: data[section]?.[dictionaries.toKey(label)] }))
+      .filter((x) => x.entry?.imagen);
+
+    if (withImages.length > 0) {
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(15, 23, 42);
+      if (cursorY > pageHeight - 60) { doc.addPage(); cursorY = margin; }
+      doc.text(`Imágenes — ${title}`, margin, cursorY + 10);
+      cursorY += 18;
+
+      const imgWidth = (pageWidth - margin * 2 - 10) / 2;
+      const imgHeight = imgWidth * 0.6;
+      for (let i = 0; i < withImages.length; i++) {
+        const { label, entry } = withImages[i];
+        const col = i % 2;
+        const x = margin + col * (imgWidth + 10);
+        if (col === 0 && cursorY + imgHeight + 14 > pageHeight - margin) {
+          doc.addPage();
+          cursorY = margin;
+        }
+        try {
+          const dataUrl = await loadImageAsDataUrl(entry.imagen.url);
+          const fmtType = dataUrl.includes("image/png") ? "PNG" : "JPEG";
+          doc.addImage(dataUrl, fmtType, x, cursorY, imgWidth, imgHeight, undefined, "FAST");
+          doc.setFontSize(8);
+          doc.setFont("helvetica", "normal");
+          doc.setTextColor(80, 80, 80);
+          doc.text(label, x, cursorY + imgHeight + 10, { maxWidth: imgWidth });
+        } catch {
+          doc.setFontSize(9);
+          doc.setTextColor(120, 120, 120);
+          doc.text(`No se pudo cargar: ${label}`, x, cursorY + 10);
+        }
+        if (col === 1 || i === withImages.length - 1) {
+          cursorY += imgHeight + 22;
+        }
+      }
+      cursorY += 6;
+    }
+  };
+
+  await checkSectionWithExtras("Tren Motriz", dictionaries.trenMotriz, "trenMotriz");
+  await checkSectionWithExtras("Motor", dictionaries.motor, "motor");
   checkSection("Exterior", dictionaries.exterior, "exterior");
-  checkSection("Interior", dictionaries.interior, "interior");
+  await checkSectionWithExtras("Interior", dictionaries.interior, "interior");
   checkSection("Otros", dictionaries.otros, "otros");
   checkSection("Prueba en Ruta", dictionaries.pruebaRuta, "pruebaRuta");
 

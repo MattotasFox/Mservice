@@ -15,11 +15,32 @@ import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
 import { InspectionsList } from "@/components/inspection/InspectionsList";
+import {
+  CheckFieldWithImage,
+  emptyCheckEntry,
+  type CheckEntry,
+} from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
 type CheckStatus = "" | "ok" | "observacion";
+
+const buildCheckEntryRecord = (items: string[]): Record<string, CheckEntry> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { ...emptyCheckEntry } }), {});
+
+// Migrate old string-based values to CheckEntry shape
+const migrateToEntry = (raw: any): CheckEntry => {
+  if (!raw) return { ...emptyCheckEntry };
+  if (typeof raw === "string") {
+    return { status: (raw as CheckEntry["status"]) || "", observacion: "", imagen: null };
+  }
+  return {
+    status: raw.status ?? "",
+    observacion: raw.observacion ?? "",
+    imagen: raw.imagen ?? null,
+  };
+};
 
 const TREN_MOTRIZ = [
   "Neumáticos",
@@ -184,10 +205,10 @@ interface InspectionData {
     seguroObligatorio: DocStatus;
   };
   accesorios: { items: Record<string, AccStatus>; otros: string };
-  trenMotriz: Record<string, CheckStatus>;
-  motor: Record<string, CheckStatus>;
+  trenMotriz: Record<string, CheckEntry>;
+  motor: Record<string, CheckEntry>;
   exterior: Record<string, CheckStatus>;
-  interior: Record<string, CheckStatus>;
+  interior: Record<string, CheckEntry>;
   otros: Record<string, CheckStatus>;
   pruebaRuta: Record<string, CheckStatus>;
   observaciones: string;
@@ -231,10 +252,10 @@ const initialData: InspectionData = {
     seguroObligatorio: "",
   },
   accesorios: initialAccesorios,
-  trenMotriz: buildCheckRecord(TREN_MOTRIZ),
-  motor: buildCheckRecord(MOTOR_ITEMS),
+  trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
+  motor: buildCheckEntryRecord(MOTOR_ITEMS),
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
-  interior: buildCheckRecord(INTERIOR_ITEMS),
+  interior: buildCheckEntryRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
   pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
   observaciones: "",
@@ -260,7 +281,20 @@ const Index = () => {
       return;
     }
     setCurrentId(id);
-    setData(stored.data as InspectionData);
+    const raw = stored.data as any;
+    const migrated: InspectionData = {
+      ...(raw as InspectionData),
+      trenMotriz: Object.fromEntries(
+        TREN_MOTRIZ.map((l) => [toKey(l), migrateToEntry(raw?.trenMotriz?.[toKey(l)])])
+      ),
+      motor: Object.fromEntries(
+        MOTOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.motor?.[toKey(l)])])
+      ),
+      interior: Object.fromEntries(
+        INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
+      ),
+    };
+    setData(migrated);
     setView("edit");
   };
 
@@ -698,13 +732,47 @@ const Index = () => {
             </div>
           </SectionCard>
 
-          {/* Tren motriz */}
+          {/* Secciones con imagen + observación por campo */}
           {(
             [
               { title: "Tren motriz", icon: Cog, items: TREN_MOTRIZ, section: "trenMotriz" as const, prefix: "tm" },
               { title: "Motor", icon: Settings, items: MOTOR_ITEMS, section: "motor" as const, prefix: "mt" },
-              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Interior", icon: Armchair, items: INTERIOR_ITEMS, section: "interior" as const, prefix: "in" },
+            ]
+          ).map(({ title, icon, items, section, prefix }) => (
+            <SectionCard
+              key={section}
+              title={title}
+              icon={icon}
+              description="Marcar OK u Observación, adjuntar imagen y notas"
+            >
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {items.map((label) => {
+                  const key = toKey(label);
+                  const entry = (data[section]?.[key] as CheckEntry) ?? emptyCheckEntry;
+                  return (
+                    <CheckFieldWithImage
+                      key={key}
+                      id={`${prefix}-${key}`}
+                      label={label}
+                      value={entry}
+                      onChange={(next) =>
+                        setData((prev) => ({
+                          ...prev,
+                          [section]: { ...prev[section], [key]: next },
+                        }))
+                      }
+                    />
+                  );
+                })}
+              </div>
+            </SectionCard>
+          ))}
+
+          {/* Secciones simples (solo OK / Observación) */}
+          {(
+            [
+              { title: "Exterior", icon: Eye, items: EXTERIOR_ITEMS, section: "exterior" as const, prefix: "ex" },
               { title: "Otros", icon: ListChecks, items: OTROS_ITEMS, section: "otros" as const, prefix: "ot" },
               { title: "Prueba en ruta", icon: Route, items: PRUEBA_RUTA_ITEMS, section: "pruebaRuta" as const, prefix: "pr" },
             ]
@@ -721,7 +789,7 @@ const Index = () => {
                   return (
                     <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
                       <Select
-                        value={data[section]?.[key] ?? ""}
+                        value={(data[section]?.[key] as CheckStatus) ?? ""}
                         onValueChange={(v) =>
                           setData((prev) => ({
                             ...prev,
