@@ -278,6 +278,9 @@ const Index = () => {
       interior: Object.fromEntries(
         INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
       ),
+      exterior: Object.fromEntries(
+        EXTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.exterior?.[toKey(l)])])
+      ),
     };
     setData(migrated);
     setView("edit");
