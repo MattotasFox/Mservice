@@ -255,7 +255,7 @@ const initialData: InspectionData = {
   trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
   motor: buildCheckEntryRecord(MOTOR_ITEMS),
   exterior: buildCheckRecord(EXTERIOR_ITEMS),
-  interior: buildCheckRecord(INTERIOR_ITEMS),
+  interior: buildCheckEntryRecord(INTERIOR_ITEMS),
   otros: buildCheckRecord(OTROS_ITEMS),
   pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
   observaciones: "",
