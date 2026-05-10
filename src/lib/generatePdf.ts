@@ -188,31 +188,57 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
       doc.text(`Imágenes — ${title}`, margin, cursorY + 10);
       cursorY += 18;
 
-      const imgWidth = (pageWidth - margin * 2 - 10) / 2;
-      const imgHeight = imgWidth * 0.6;
+      const cellWidth = (pageWidth - margin * 2 - 10) / 2;
+      const maxCellHeight = 220;
+      let rowMaxHeight = 0;
+      let rowStartY = cursorY;
       for (let i = 0; i < withImages.length; i++) {
         const { label, entry } = withImages[i];
         const col = i % 2;
-        const x = margin + col * (imgWidth + 10);
-        if (col === 0 && cursorY + imgHeight + 14 > pageHeight - margin) {
-          doc.addPage();
-          cursorY = margin;
-        }
+        const x = margin + col * (cellWidth + 10);
+
         try {
-          const dataUrl = await loadImageAsDataUrl(entry.imagen.url);
+          const { dataUrl, width: iw, height: ih } = await loadImageAsDataUrl(entry.imagen.url);
+          // Preserve aspect ratio: fit within cellWidth x maxCellHeight
+          const ratio = iw / ih;
+          let drawW = cellWidth;
+          let drawH = drawW / ratio;
+          if (drawH > maxCellHeight) {
+            drawH = maxCellHeight;
+            drawW = drawH * ratio;
+          }
+          const cellHeight = drawH + 14; // image + label
+
+          if (col === 0) {
+            if (cursorY + cellHeight > pageHeight - margin) {
+              doc.addPage();
+              cursorY = margin;
+            }
+            rowStartY = cursorY;
+            rowMaxHeight = 0;
+          }
+
+          const drawX = x + (cellWidth - drawW) / 2;
           const fmtType = dataUrl.includes("image/png") ? "PNG" : "JPEG";
-          doc.addImage(dataUrl, fmtType, x, cursorY, imgWidth, imgHeight, undefined, "FAST");
+          doc.addImage(dataUrl, fmtType, drawX, rowStartY, drawW, drawH, undefined, "FAST");
           doc.setFontSize(8);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(80, 80, 80);
-          doc.text(label, x, cursorY + imgHeight + 10, { maxWidth: imgWidth });
+          doc.text(label, x, rowStartY + drawH + 10, { maxWidth: cellWidth });
+
+          if (cellHeight > rowMaxHeight) rowMaxHeight = cellHeight;
         } catch {
+          if (col === 0) {
+            rowStartY = cursorY;
+            rowMaxHeight = Math.max(rowMaxHeight, 20);
+          }
           doc.setFontSize(9);
           doc.setTextColor(120, 120, 120);
-          doc.text(`No se pudo cargar: ${label}`, x, cursorY + 10);
+          doc.text(`No se pudo cargar: ${label}`, x, rowStartY + 10);
         }
+
         if (col === 1 || i === withImages.length - 1) {
-          cursorY += imgHeight + 22;
+          cursorY = rowStartY + rowMaxHeight + 8;
         }
       }
       cursorY += 6;
@@ -271,7 +297,9 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   doc.save(filename);
 }
 
-function loadImageAsDataUrl(url: string): Promise<string> {
+function loadImageAsDataUrl(
+  url: string
+): Promise<{ dataUrl: string; width: number; height: number }> {
   return new Promise((resolve, reject) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
@@ -283,7 +311,11 @@ function loadImageAsDataUrl(url: string): Promise<string> {
       if (!ctx) return reject(new Error("No canvas context"));
       ctx.drawImage(img, 0, 0);
       try {
-        resolve(canvas.toDataURL("image/jpeg", 0.85));
+        resolve({
+          dataUrl: canvas.toDataURL("image/jpeg", 0.85),
+          width: img.naturalWidth,
+          height: img.naturalHeight,
+        });
       } catch (e) {
         reject(e);
       }
