@@ -52,7 +52,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
 
   // Logo top-right
   try {
-    const logoData = await loadImageAsDataUrl(logoUrl);
+    const logoData = await loadPngAsDataUrl(logoUrl);
     const logoSize = 56;
     doc.addImage(logoData, "PNG", pageWidth - margin - logoSize, 7, logoSize, logoSize, undefined, "FAST");
   } catch {
