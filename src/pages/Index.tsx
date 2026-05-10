@@ -306,6 +306,8 @@ const Index = () => {
       title: "Inspección guardada",
       description: `Se guardó la inspección de ${patente}.`,
     });
+    setView("list");
+    setCurrentId(null);
   };
 
   const update = <S extends keyof InspectionData>(
@@ -364,8 +366,51 @@ const Index = () => {
     }
   };
 
+  const handleDownload = async (id: string) => {
+    const stored = getInspection(id);
+    if (!stored) {
+      toast({ title: "Inspección no encontrada" });
+      return;
+    }
+    const raw = stored.data as any;
+    const migrated: InspectionData = {
+      ...(raw as InspectionData),
+      trenMotriz: Object.fromEntries(
+        TREN_MOTRIZ.map((l) => [toKey(l), migrateToEntry(raw?.trenMotriz?.[toKey(l)])])
+      ),
+      motor: Object.fromEntries(
+        MOTOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.motor?.[toKey(l)])])
+      ),
+      interior: Object.fromEntries(
+        INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
+      ),
+      exterior: Object.fromEntries(
+        EXTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.exterior?.[toKey(l)])])
+      ),
+    };
+    try {
+      await generateInspectionPdf(migrated, {
+        trenMotriz: TREN_MOTRIZ,
+        motor: MOTOR_ITEMS,
+        exterior: EXTERIOR_ITEMS,
+        interior: INTERIOR_ITEMS,
+        otros: OTROS_ITEMS,
+        pruebaRuta: PRUEBA_RUTA_ITEMS,
+        accesorios: ACCESORIOS,
+        toKey,
+      });
+      toast({
+        title: "Informe generado",
+        description: `PDF descargado para vehículo ${stored.patente || "sin patente"}.`,
+      });
+    } catch (err) {
+      console.error(err);
+      toast({ title: "Error al generar el informe" });
+    }
+  };
+
   if (view === "list") {
-    return <InspectionsList onNew={handleNew} onOpen={handleOpen} />;
+    return <InspectionsList onNew={handleNew} onOpen={handleOpen} onDownload={handleDownload} />;
   }
 
   return (

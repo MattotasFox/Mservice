@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Gauge, Pencil, Trash2, FileText } from "lucide-react";
+import { Plus, Gauge, Pencil, Trash2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   loadInspections,
@@ -10,9 +10,10 @@ import {
 interface Props {
   onNew: () => void;
   onOpen: (id: string) => void;
+  onDownload: (id: string) => void;
 }
 
-export const InspectionsList = ({ onNew, onOpen }: Props) => {
+export const InspectionsList = ({ onNew, onOpen, onDownload }: Props) => {
   const [items, setItems] = useState<StoredInspection[]>([]);
 
   useEffect(() => {
@@ -94,6 +95,18 @@ export const InspectionsList = ({ onNew, onOpen }: Props) => {
                     <Pencil className="h-4 w-4" />
                     Editar
                   </span>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(it.id);
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    aria-label="Descargar"
+                    title="Descargar PDF"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
                   <button
                     type="button"
                     onClick={(e) => handleDelete(e, it.id)}
