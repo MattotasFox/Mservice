@@ -97,6 +97,18 @@ export const InspectionsList = ({ onNew, onOpen, onDownload }: Props) => {
                   </span>
                   <button
                     type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDownload(it.id);
+                    }}
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
+                    aria-label="Descargar"
+                    title="Descargar PDF"
+                  >
+                    <Download className="h-4 w-4" />
+                  </button>
+                  <button
+                    type="button"
                     onClick={(e) => handleDelete(e, it.id)}
                     className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     aria-label="Eliminar"
