@@ -1,5 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logoUrl from "@/assets/logo.png";
 
 type AnyData = Record<string, any>;
 
@@ -48,6 +49,15 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   doc.setFont("helvetica", "normal");
   const meta = `Patente: ${data.vehiculo.patente || "—"}  |  Fecha: ${data.inspector.fecha || "—"}  |  Hora: ${data.inspector.hora || "—"}`;
   doc.text(meta, margin, 55);
+
+  // Logo top-right
+  try {
+    const logoData = await loadImageAsDataUrl(logoUrl);
+    const logoSize = 56;
+    doc.addImage(logoData, "PNG", pageWidth - margin - logoSize, 7, logoSize, logoSize, undefined, "FAST");
+  } catch {
+    // ignore if logo fails
+  }
 
   let cursorY = 90;
 
