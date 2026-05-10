@@ -292,3 +292,17 @@ function loadImageAsDataUrl(url: string): Promise<string> {
     img.src = url;
   });
 }
+
+function loadPngAsDataUrl(url: string): Promise<string> {
+  return fetch(url)
+    .then((r) => r.blob())
+    .then(
+      (blob) =>
+        new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => resolve(reader.result as string);
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        })
+    );
+}
