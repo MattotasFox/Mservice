@@ -13,7 +13,7 @@ interface Props {
   onDownload: (id: string) => void;
 }
 
-export const InspectionsList = ({ onNew, onOpen }: Props) => {
+export const InspectionsList = ({ onNew, onOpen, onDownload }: Props) => {
   const [items, setItems] = useState<StoredInspection[]>([]);
 
   useEffect(() => {
