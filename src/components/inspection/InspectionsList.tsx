@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Plus, Gauge, Pencil, Trash2, FileText } from "lucide-react";
+import { Plus, Gauge, Pencil, Trash2, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   loadInspections,
@@ -10,6 +10,7 @@ import {
 interface Props {
   onNew: () => void;
   onOpen: (id: string) => void;
+  onDownload: (id: string) => void;
 }
 
 export const InspectionsList = ({ onNew, onOpen }: Props) => {
