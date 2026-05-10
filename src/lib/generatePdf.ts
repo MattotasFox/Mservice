@@ -224,7 +224,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
           doc.setFontSize(8);
           doc.setFont("helvetica", "normal");
           doc.setTextColor(80, 80, 80);
-          doc.text(label, x, rowStartY + drawH + 10, { maxWidth: cellWidth });
+          doc.text(label, drawX, rowStartY + drawH + 10, { maxWidth: drawW });
 
           if (cellHeight > rowMaxHeight) rowMaxHeight = cellHeight;
         } catch {
