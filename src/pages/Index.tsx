@@ -306,6 +306,8 @@ const Index = () => {
       title: "Inspección guardada",
       description: `Se guardó la inspección de ${patente}.`,
     });
+    setView("list");
+    setCurrentId(null);
   };
 
   const update = <S extends keyof InspectionData>(
