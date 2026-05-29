@@ -22,9 +22,9 @@ import {
   type CheckEntry,
 } from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
-import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule } from "@/lib/maintenanceRecommendations";
+import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule, maintenanceRules } from "@/lib/maintenanceRecommendations";
 import { useEffect } from "react";
-        import { seedMaintenanceRules } from "@/lib/seedFirebase";
+import { seedMaintenanceRules } from "@/lib/seedFirebase";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
@@ -256,7 +256,7 @@ const Index = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<InspectionData>(initialData);
-  const [rules, setRules] = useState<MaintenanceRule[]>([]);
+  const [rules, setRules] = useState<MaintenanceRule[]>(maintenanceRules);
 
   useEffect(() => {
     const setup = async () => {
@@ -273,11 +273,11 @@ const Index = () => {
     rules.flatMap(r => r.appliesTo?.brandIncludes || [])
   )).map(b => b.charAt(0).toUpperCase() + b.slice(1)).sort();
 
+  const searchBrand = data.vehiculo.marca.toLowerCase();
   const availableModels = Array.from(new Set(
     rules.filter(r => {
-      if (!data.vehiculo.marca) return true;
-      const searchBrand = data.vehiculo.marca.toLowerCase();
-      return r.appliesTo?.brandIncludes?.some(b => b.toLowerCase() === searchBrand);
+      if (!searchBrand) return true;
+      return r.appliesTo?.brandIncludes?.some(b => b.toLowerCase().includes(searchBrand));
     }).flatMap(r => r.appliesTo?.modelIncludes || [])
   )).map(m => m.charAt(0).toUpperCase() + m.slice(1)).sort();
 

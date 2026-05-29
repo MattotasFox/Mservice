@@ -22,6 +22,12 @@ export interface MaintenanceRule {
     yearFrom?: number;
     yearTo?: number;
   };
+  // Soporte para pautas agrupadas
+  milestones?: {
+    km: number;
+    title: string;
+    detail: string;
+  }[];
 }
 
 export interface MaintenanceRecommendation {
@@ -48,7 +54,7 @@ const toNumber = (value: string) => {
   return Number(value.replace(/\./g, "").replace(",", "."));
 };
 
-const maintenanceRules: MaintenanceRule[] = [
+export const maintenanceRules: MaintenanceRule[] = [
   {
     id: "corsa-oil",
     title: "Cambio de aceite de motor",
@@ -165,7 +171,22 @@ export const getMaintenanceRecommendations = (
   const km = toNumber(vehicle.kilometraje);
   if (!Number.isFinite(km) || km <= 0) return [];
 
-  const matchingRules = rules.filter((rule) => appliesToVehicle(rule, vehicle));
+  // Expandimos las reglas que vienen agrupadas (milestones) a reglas individuales
+  const expandedRules: MaintenanceRule[] = rules.flatMap((rule) => {
+    if (rule.milestones && rule.milestones.length > 0) {
+      return rule.milestones.map((m) => ({
+        ...rule,
+        id: `${rule.id}-${m.km}`,
+        title: m.title,
+        detail: m.detail,
+        intervalKm: m.km,
+        milestones: undefined, // Evitar recursión
+      }));
+    }
+    return [rule];
+  });
+
+  const matchingRules = expandedRules.filter((rule) => appliesToVehicle(rule, vehicle));
   const specificRules = matchingRules.filter((rule) => rule.appliesTo);
   const generalRules = matchingRules.filter(
     (rule) =>
