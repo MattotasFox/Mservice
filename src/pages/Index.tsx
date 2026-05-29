@@ -22,7 +22,9 @@ import {
   type CheckEntry,
 } from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
-import { getMaintenanceRecommendations } from "@/lib/maintenanceRecommendations";
+import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule } from "@/lib/maintenanceRecommendations";
+import { useEffect } from "react";
+        import { seedMaintenanceRules } from "@/lib/seedFirebase";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
@@ -254,7 +256,18 @@ const Index = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<InspectionData>(initialData);
-  const maintenanceRecommendations = getMaintenanceRecommendations(data.vehiculo);
+  const [rules, setRules] = useState<MaintenanceRule[]>([]);
+
+  useEffect(() => {
+    const setup = async () => {
+      // await seedMaintenanceRules(); // DESCOMENTA esta linea SOLO UNA VEZ para subir los nuevos modelos
+      const rulesData = await fetchMaintenanceRules();
+      setRules(rulesData);
+    };
+    setup();
+  }, []);
+
+  const maintenanceRecommendations = getMaintenanceRecommendations(data.vehiculo, rules);
 
   const handleNew = () => {
     setCurrentId(newId());
