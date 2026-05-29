@@ -3,7 +3,7 @@ import autoTable from "jspdf-autotable";
 import logoUrl from "@/assets/logo.png";
 
 type AnyData = Record<string, any>;
-
+AAAA
 const labelMaps: Record<string, Record<string, string>> = {
   doc: { ok: "OK", atrasado: "Atrasado", no: "NO", "": "—" },
   acc: { si: "SÍ", no: "NO", na: "N/A", "": "—" },
