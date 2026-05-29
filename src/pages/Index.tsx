@@ -269,6 +269,18 @@ const Index = () => {
 
   const maintenanceRecommendations = getMaintenanceRecommendations(data.vehiculo, rules);
 
+  const availableBrands = Array.from(new Set(
+    rules.flatMap(r => r.appliesTo?.brandIncludes || [])
+  )).map(b => b.charAt(0).toUpperCase() + b.slice(1)).sort();
+
+  const availableModels = Array.from(new Set(
+    rules.filter(r => {
+      if (!data.vehiculo.marca) return true;
+      const searchBrand = data.vehiculo.marca.toLowerCase();
+      return r.appliesTo?.brandIncludes?.some(b => b.toLowerCase() === searchBrand);
+    }).flatMap(r => r.appliesTo?.modelIncludes || [])
+  )).map(m => m.charAt(0).toUpperCase() + m.slice(1)).sort();
+
   const handleNew = () => {
     setCurrentId(newId());
     setData(initialData);
@@ -566,18 +578,30 @@ const Index = () => {
               <FormField label="Marca" htmlFor="v-marca">
                 <Input
                   id="v-marca"
+                  list="brand-list"
                   value={data.vehiculo.marca}
                   onChange={(e) => update("vehiculo", "marca", e.target.value)}
                   placeholder="Toyota"
                 />
+                <datalist id="brand-list">
+                  {availableBrands.map(brand => (
+                    <option key={brand} value={brand} />
+                  ))}
+                </datalist>
               </FormField>
               <FormField label="Modelo" htmlFor="v-modelo">
                 <Input
                   id="v-modelo"
+                  list="model-list"
                   value={data.vehiculo.modelo}
                   onChange={(e) => update("vehiculo", "modelo", e.target.value)}
                   placeholder="Corolla"
                 />
+                <datalist id="model-list">
+                  {availableModels.map(model => (
+                    <option key={model} value={model} />
+                  ))}
+                </datalist>
               </FormField>
               <FormField label="Año" htmlFor="v-anio">
                 <Input
