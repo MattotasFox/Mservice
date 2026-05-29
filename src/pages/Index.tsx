@@ -1,9 +1,10 @@
 import { useState, type FormEvent, useRef, type ChangeEvent } from "react";
-import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X, Save, ArrowLeft } from "lucide-react";
+import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X, Save, ArrowLeft, AlertTriangle, CalendarClock } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -21,6 +22,7 @@ import {
   type CheckEntry,
 } from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
+import { getMaintenanceRecommendations } from "@/lib/maintenanceRecommendations";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
@@ -252,6 +254,7 @@ const Index = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<InspectionData>(initialData);
+  const maintenanceRecommendations = getMaintenanceRecommendations(data.vehiculo);
 
   const handleNew = () => {
     setCurrentId(newId());
@@ -679,6 +682,55 @@ const Index = () => {
                 </Select>
               </FormField>
             </div>
+          </SectionCard>
+
+          <SectionCard
+            title="Mantenciones sugeridas"
+            icon={CalendarClock}
+            description="Recomendaciones segun modelo, año y kilometraje"
+          >
+            {maintenanceRecommendations.length > 0 ? (
+              <div className="space-y-3">
+                {maintenanceRecommendations.map((recommendation) => (
+                  <div
+                    key={recommendation.id}
+                    className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background p-4 md:flex-row md:items-start md:justify-between"
+                  >
+                    <div className="flex gap-3">
+                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <AlertTriangle className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-foreground">
+                          {recommendation.title}
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                          {recommendation.detail}
+                        </p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          Mantencion de referencia:{" "}
+                          <span className="font-medium text-foreground">
+                            {recommendation.dueKm.toLocaleString("es-CL")} km
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                    <Badge
+                      variant={recommendation.priority === "due" ? "destructive" : "secondary"}
+                      className="w-fit shrink-0"
+                    >
+                      {recommendation.priority === "due"
+                        ? "Necesita atencion"
+                        : `Faltan ${recommendation.kmRemaining.toLocaleString("es-CL")} km`}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <p className="rounded-lg border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
+                Ingresa marca, modelo, año y kilometraje para ver recomendaciones de mantencion.
+              </p>
+            )}
           </SectionCard>
 
           {/* Documentación del vehículo */}
