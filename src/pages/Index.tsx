@@ -25,6 +25,9 @@ import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
 import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule, maintenanceRules } from "@/lib/maintenanceRecommendations";
 import { useEffect } from "react";
 import { seedMaintenanceRules } from "@/lib/seedFirebase";
+import { signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
+import { LogOut } from "lucide-react";
 
 type DocStatus = "" | "ok" | "atrasado" | "no";
 type AccStatus = "" | "si" | "no" | "na";
@@ -438,7 +441,7 @@ const Index = () => {
   };
 
   if (view === "list") {
-    return <InspectionsList onNew={handleNew} onOpen={handleOpen} onDownload={handleDownload} />;
+    return <InspectionsList onNew={handleNew} onOpen={handleOpen} onDownload={handleDownload} onLogout={() => signOut(auth)} />;
   }
 
   return (
@@ -460,15 +463,27 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleBack}
-              className="gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Volver
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={handleBack}
+                className="gap-2"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Volver
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => signOut(auth)}
+                className="gap-2 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
+                title="Cerrar sesión"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="hidden sm:inline">Salir</span>
+              </Button>
+            </div>
           </div>
         </div>
       </header>
