@@ -12,6 +12,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
@@ -263,7 +271,7 @@ const Index = () => {
 
   useEffect(() => {
     const setup = async () => {
-      // await seedMaintenanceRules(); // DESCOMENTA esta linea SOLO UNA VEZ para subir los nuevos modelos
+      await seedMaintenanceRules();
       const rulesData = await fetchMaintenanceRules();
       setRules(rulesData);
     };
@@ -577,6 +585,75 @@ const Index = () => {
             title="Datos del Vehículo"
             icon={Car}
             description="Especificaciones técnicas e identificación"
+            action={
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="default" className="gap-2 shadow-[var(--shadow-elegant)]">
+                    <CalendarClock className="h-4 w-4" />
+                    Mantenciones sugeridas
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2">
+                      <CalendarClock className="h-5 w-5 text-primary" />
+                      Mantenciones Sugeridas
+                    </DialogTitle>
+                    <DialogDescription>
+                      Recomendaciones basadas en {data.vehiculo.marca} {data.vehiculo.modelo} ({data.vehiculo.kilometraje} km)
+                    </DialogDescription>
+                  </DialogHeader>
+
+                  <div className="py-4">
+                    {maintenanceRecommendations.length > 0 ? (
+                      <div className="space-y-3">
+                        {maintenanceRecommendations.map((recommendation) => (
+                          <div
+                            key={recommendation.id}
+                            className="flex flex-col gap-3 rounded-lg border border-border/70 bg-secondary/20 p-4 md:flex-row md:items-start md:justify-between"
+                          >
+                            <div className="flex gap-3">
+                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <AlertTriangle className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-foreground">
+                                  {recommendation.title}
+                                </h3>
+                                <p className="mt-1 text-sm text-muted-foreground">
+                                  {recommendation.detail}
+                                </p>
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                  Mantención de referencia:{" "}
+                                  <span className="font-medium text-foreground">
+                                    {recommendation.dueKm.toLocaleString("es-CL")} km
+                                  </span>
+                                </p>
+                              </div>
+                            </div>
+                            <Badge
+                              variant={recommendation.priority === "due" ? "destructive" : "secondary"}
+                              className="w-fit shrink-0"
+                            >
+                              {recommendation.priority === "due"
+                                ? "Necesita atención"
+                                : `Faltan ${recommendation.kmRemaining.toLocaleString("es-CL")} km`}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center py-10 text-center border rounded-lg border-dashed">
+                        <Car className="h-10 w-10 text-muted-foreground/40 mb-3" />
+                        <p className="text-sm text-muted-foreground">
+                          Ingresa marca, modelo y kilometraje válido para ver recomendaciones.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            }
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <FormField label="Patente" htmlFor="v-patente">
@@ -734,55 +811,6 @@ const Index = () => {
                 </Select>
               </FormField>
             </div>
-          </SectionCard>
-
-          <SectionCard
-            title="Mantenciones sugeridas"
-            icon={CalendarClock}
-            description="Recomendaciones segun modelo, año y kilometraje"
-          >
-            {maintenanceRecommendations.length > 0 ? (
-              <div className="space-y-3">
-                {maintenanceRecommendations.map((recommendation) => (
-                  <div
-                    key={recommendation.id}
-                    className="flex flex-col gap-3 rounded-lg border border-border/70 bg-background p-4 md:flex-row md:items-start md:justify-between"
-                  >
-                    <div className="flex gap-3">
-                      <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <AlertTriangle className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <h3 className="font-semibold text-foreground">
-                          {recommendation.title}
-                        </h3>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {recommendation.detail}
-                        </p>
-                        <p className="mt-2 text-sm text-muted-foreground">
-                          Mantencion de referencia:{" "}
-                          <span className="font-medium text-foreground">
-                            {recommendation.dueKm.toLocaleString("es-CL")} km
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <Badge
-                      variant={recommendation.priority === "due" ? "destructive" : "secondary"}
-                      className="w-fit shrink-0"
-                    >
-                      {recommendation.priority === "due"
-                        ? "Necesita atencion"
-                        : `Faltan ${recommendation.kmRemaining.toLocaleString("es-CL")} km`}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="rounded-lg border border-dashed border-border/70 p-4 text-sm text-muted-foreground">
-                Ingresa marca, modelo, año y kilometraje para ver recomendaciones de mantencion.
-              </p>
-            )}
           </SectionCard>
 
           {/* Documentación del vehículo */}

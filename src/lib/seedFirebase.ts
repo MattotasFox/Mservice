@@ -200,9 +200,14 @@ Volvo	XC40	2021	10000	Aceite motor y actualización software
 Volvo	XC40	2021	40000	Filtro aire y líquido frenos
 Volvo	XC90	2019	10000	Aceite motor y filtro
 Volvo	XC90	2019	50000	Revisión sistema AWD y filtros
+MG	3	2021	5000	Revisión de cortesía y niveles
 MG	3	2021	10000	Aceite motor, filtro y scanner oficial
 MG	3	2021	20000	Cambio filtro aire y filtro polen
 MG	3	2021	40000	Cambio aceite, todos los filtros, líquido frenos y bujías
+Ford	Mustang	2020	5000	Aceite sintético Premium 5W20 y filtro
+Ford	Mustang	2020	15000	Rotación neumáticos y alineación
+Ford	Mustang	2020	30000	Filtros aire alto rendimiento y bujías
+Ford	Mustang	2020	60000	Líquido transmisión y revisión frenos
 MG	ZS	2022	10000	Aceite motor y filtro
 MG	ZS	2022	30000	Filtro aire y revisión niveles
 MG	RX5	2021	10000	Aceite motor y filtro
