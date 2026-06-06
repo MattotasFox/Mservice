@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import {
   loadInspections,
   deleteInspection,
-  type StoredInspection,
 } from "@/lib/inspectionsStore";
+import { Inspection } from "@/lib/types";
 
 interface Props {
   onNew: () => void;
@@ -15,27 +15,38 @@ interface Props {
 }
 
 export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) => {
-  const [items, setItems] = useState<StoredInspection[]>([]);
+  const [items, setItems] = useState<Inspection[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    setItems(loadInspections());
-  }, []);
-
-  const handleDelete = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    if (!confirm("¿Eliminar esta inspección?")) return;
-    deleteInspection(id);
-    setItems(loadInspections());
+  const fetchInspections = async () => {
+    setLoading(true);
+    const data = await loadInspections();
+    setItems(data);
+    setLoading(false);
   };
 
-  const formatDate = (ts: number) =>
-    new Date(ts).toLocaleString("es-CL", {
+  useEffect(() => {
+    fetchInspections();
+  }, []);
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    if (!confirm("¿Eliminar esta inspección?")) return;
+    await deleteInspection(id);
+    fetchInspections();
+  };
+
+  const formatDate = (val: any) => {
+    if (!val) return "Sin fecha";
+    const date = val.toDate ? val.toDate() : new Date(val);
+    return date.toLocaleString("es-CL", {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -74,7 +85,11 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
           </Button>
         </div>
 
-        {items.length === 0 ? (
+        {loading ? (
+          <div className="py-20 text-center">
+            <p className="text-muted-foreground animate-pulse">Cargando inspecciones...</p>
+          </div>
+        ) : items.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
@@ -86,7 +101,7 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
             {items.map((it) => (
               <button
                 key={it.id}
-                onClick={() => onOpen(it.id)}
+                onClick={() => onOpen(it.id!)}
                 className="group flex items-center justify-between rounded-xl border border-border bg-card p-5 text-left transition-colors hover:border-primary hover:bg-accent/30"
               >
                 <div className="flex items-center gap-4">
@@ -95,10 +110,10 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
                   </div>
                   <div>
                     <h3 className="font-semibold text-lg text-foreground">
-                      {it.patente || "Sin patente"}
+                      {it.vehiculo.patente || "Sin patente"}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      Actualizado: {formatDate(it.updatedAt)}
+                      Cliente: {it.cliente.nombre || "Sin nombre"} | Actualizado: {formatDate(it.creadoEn)}
                     </p>
                   </div>
                 </div>
@@ -111,7 +126,7 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      onDownload(it.id);
+                      onDownload(it.id!);
                     }}
                     className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-primary hover:text-primary-foreground transition-colors"
                     aria-label="Descargar"
@@ -121,7 +136,7 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
                   </button>
                   <button
                     type="button"
-                    onClick={(e) => handleDelete(e, it.id)}
+                    onClick={(e) => handleDelete(e, it.id!)}
                     className="flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
                     aria-label="Eliminar"
                   >

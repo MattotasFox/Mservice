@@ -1,5 +1,5 @@
-import { useState, type FormEvent, useRef, type ChangeEvent } from "react";
-import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Images, Upload, X, Save, ArrowLeft, AlertTriangle, CalendarClock } from "lucide-react";
+import { useState, type FormEvent, useRef, type ChangeEvent, useEffect } from "react";
+import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Save, ArrowLeft, AlertTriangle, CalendarClock, LogOut } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,31 +31,10 @@ import {
 } from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
 import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule, maintenanceRules } from "@/lib/maintenanceRecommendations";
-import { useEffect } from "react";
 import { seedMaintenanceRules } from "@/lib/seedFirebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { LogOut } from "lucide-react";
-
-type DocStatus = "" | "ok" | "atrasado" | "no";
-type AccStatus = "" | "si" | "no" | "na";
-type CheckStatus = "" | "ok" | "observacion";
-
-const buildCheckEntryRecord = (items: string[]): Record<string, CheckEntry> =>
-  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { ...emptyCheckEntry } }), {});
-
-// Migrate old string-based values to CheckEntry shape
-const migrateToEntry = (raw: any): CheckEntry => {
-  if (!raw) return { ...emptyCheckEntry };
-  if (typeof raw === "string") {
-    return { status: (raw as CheckEntry["status"]) || "", observacion: "", imagen: null };
-  }
-  return {
-    status: raw.status ?? "",
-    observacion: raw.observacion ?? "",
-    imagen: raw.imagen ?? null,
-  };
-};
+import { Inspection, DocStatus, AccStatus, CheckStatus } from "@/lib/types";
 
 const TREN_MOTRIZ = [
   "Neumáticos",
@@ -143,17 +122,6 @@ const PRUEBA_RUTA_ITEMS = [
   "Ruidos dentro de habitáculo",
 ];
 
-const toKey = (label: string) =>
-  label
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "_")
-    .replace(/^_|_$/g, "");
-
-const buildCheckRecord = (items: string[]): Record<string, CheckStatus> =>
-  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: "" as CheckStatus }), {});
-
 const ACCESORIOS: { key: string; label: string }[] = [
   { key: "aireAcondicionado", label: "Aire acondicionado" },
   { key: "climatizador", label: "Climatizador" },
@@ -182,56 +150,26 @@ const ACCESORIOS: { key: string; label: string }[] = [
   { key: "extintor", label: "Extintor" },
 ];
 
-interface InspectionData {
-  cliente: { nombre: string; rut: string; email: string; telefono: string };
-  inspector: { nombre: string; direccion: string; fecha: string; hora: string };
-  vehiculo: {
-    patente: string;
-    modelo: string;
-    vin: string;
-    color: string;
-    combustible: string;
-    tipoAuto: string;
-    marca: string;
-    anio: string;
-    nMotor: string;
-    kilometraje: string;
-    transmision: string;
-    traccion: string;
-  };
-  documentacion: {
-    permisoCirculacion: DocStatus;
-    revisionTecnica: DocStatus;
-    seguroObligatorio: DocStatus;
-  };
-  accesorios: { items: Record<string, AccStatus>; otros: string };
-  trenMotriz: Record<string, CheckEntry>;
-  motor: Record<string, CheckEntry>;
-  exterior: Record<string, CheckEntry>;
-  interior: Record<string, CheckEntry>;
-  otros: Record<string, CheckStatus>;
-  pruebaRuta: Record<string, CheckStatus>;
-  observaciones: string;
-  conclusion: string;
-  imagenes: { name: string; url: string }[];
-}
+const toKey = (label: string) =>
+  label
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_|_$/g, "");
 
-const initialAccesorios: { items: Record<string, AccStatus>; otros: string } = {
-  items: ACCESORIOS.reduce(
-    (acc, { key }) => ({ ...acc, [key]: "" as AccStatus }),
-    {} as Record<string, AccStatus>
-  ),
-  otros: "",
-};
+const buildCheckEntryRecord = (items: string[]): Record<string, CheckEntry> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { ...emptyCheckEntry } }), {});
 
-const initialData: InspectionData = {
+const buildSimpleCheckRecord = (items: string[]): Record<string, { estado: CheckStatus }> =>
+  items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { estado: "" as CheckStatus } }), {});
+
+const initialData: Inspection = {
   cliente: { nombre: "", rut: "", email: "", telefono: "" },
-  inspector: {
-    nombre: "",
-    direccion: "",
-    fecha: new Date().toISOString().split("T")[0],
-    hora: new Date().toTimeString().slice(0, 5),
-  },
+  inspectorNombre: "",
+  inspectorDireccion: "",
+  fecha: new Date().toISOString().split("T")[0],
+  hora: new Date().toTimeString().slice(0, 5),
   vehiculo: {
     patente: "",
     modelo: "",
@@ -251,23 +189,29 @@ const initialData: InspectionData = {
     revisionTecnica: "",
     seguroObligatorio: "",
   },
-  accesorios: initialAccesorios,
-  trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
-  motor: buildCheckEntryRecord(MOTOR_ITEMS),
-  exterior: buildCheckEntryRecord(EXTERIOR_ITEMS),
-  interior: buildCheckEntryRecord(INTERIOR_ITEMS),
-  otros: buildCheckRecord(OTROS_ITEMS),
-  pruebaRuta: buildCheckRecord(PRUEBA_RUTA_ITEMS),
-  observaciones: "",
+  equipamiento: {
+    items: ACCESORIOS.reduce((acc, { key }) => ({ ...acc, [key]: "" as AccStatus }), {}),
+    otros: "",
+  },
+  detalles: {
+    trenMotriz: buildCheckEntryRecord(TREN_MOTRIZ),
+    motor: buildCheckEntryRecord(MOTOR_ITEMS),
+    exterior: buildCheckEntryRecord(EXTERIOR_ITEMS),
+    interior: buildCheckEntryRecord(INTERIOR_ITEMS),
+    otros: buildSimpleCheckRecord(OTROS_ITEMS),
+    pruebaRuta: buildSimpleCheckRecord(PRUEBA_RUTA_ITEMS),
+  },
+  observacionesGenerales: "",
   conclusion: "",
-  imagenes: [],
+  imagenesGenerales: [],
 };
 
 const Index = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
-  const [data, setData] = useState<InspectionData>(initialData);
+  const [data, setData] = useState<Inspection>(initialData);
   const [rules, setRules] = useState<MaintenanceRule[]>(maintenanceRules);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const setup = async () => {
@@ -278,7 +222,12 @@ const Index = () => {
     setup();
   }, []);
 
-  const maintenanceRecommendations = getMaintenanceRecommendations(data.vehiculo, rules);
+  const maintenanceRecommendations = getMaintenanceRecommendations({
+    marca: data.vehiculo.marca,
+    modelo: data.vehiculo.modelo,
+    anio: data.vehiculo.anio,
+    kilometraje: data.vehiculo.kilometraje
+  }, rules);
 
   const availableBrands = Array.from(new Set(
     rules.flatMap(r => r.appliesTo?.brandIncludes || [])
@@ -298,31 +247,18 @@ const Index = () => {
     setView("edit");
   };
 
-  const handleOpen = (id: string) => {
-    const stored = getInspection(id);
+  const handleOpen = async (id: string) => {
+    setLoading(true);
+    const stored = await getInspection(id);
     if (!stored) {
       toast({ title: "Inspección no encontrada" });
+      setLoading(false);
       return;
     }
     setCurrentId(id);
-    const raw = stored.data as any;
-    const migrated: InspectionData = {
-      ...(raw as InspectionData),
-      trenMotriz: Object.fromEntries(
-        TREN_MOTRIZ.map((l) => [toKey(l), migrateToEntry(raw?.trenMotriz?.[toKey(l)])])
-      ),
-      motor: Object.fromEntries(
-        MOTOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.motor?.[toKey(l)])])
-      ),
-      interior: Object.fromEntries(
-        INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
-      ),
-      exterior: Object.fromEntries(
-        EXTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.exterior?.[toKey(l)])])
-      ),
-    };
-    setData(migrated);
+    setData(stored);
     setView("edit");
+    setLoading(false);
   };
 
   const handleBack = () => {
@@ -330,7 +266,7 @@ const Index = () => {
     setCurrentId(null);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!currentId) return;
     const patente = data.vehiculo.patente.trim();
     if (!patente) {
@@ -340,42 +276,29 @@ const Index = () => {
       });
       return;
     }
-    saveInspection(currentId, patente, data);
-    toast({
-      title: "Inspección guardada",
-      description: `Se guardó la inspección de ${patente}.`,
-    });
-    setView("list");
-    setCurrentId(null);
+    setLoading(true);
+    try {
+      await saveInspection(currentId, data);
+      toast({
+        title: "Inspección guardada",
+        description: `Se guardó la inspección de ${patente} en la nube.`,
+      });
+      setView("list");
+      setCurrentId(null);
+    } catch (e) {
+      toast({ title: "Error al guardar", description: "Revisa tu conexión." });
+    }
+    setLoading(false);
   };
 
-  const update = <S extends keyof InspectionData>(
+  const update = <S extends keyof Inspection>(
     section: S,
-    field: keyof InspectionData[S],
-    value: string
+    field: string,
+    value: any
   ) => {
-    setData((prev) => ({
+    setData((prev: any) => ({
       ...prev,
-      [section]: { ...(prev[section] as object), [field]: value },
-    }));
-  };
-
-  const fileInputRef = useRef<HTMLInputElement>(null);
-
-  const handleImageUpload = (e: ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    const newImages = files.map((file) => ({
-      name: file.name,
-      url: URL.createObjectURL(file),
-    }));
-    setData((prev) => ({ ...prev, imagenes: [...prev.imagenes, ...newImages] }));
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const removeImage = (index: number) => {
-    setData((prev) => ({
-      ...prev,
-      imagenes: prev.imagenes.filter((_, i) => i !== index),
+      [section]: { ...prev[section], [field]: value },
     }));
   };
 
@@ -406,29 +329,13 @@ const Index = () => {
   };
 
   const handleDownload = async (id: string) => {
-    const stored = getInspection(id);
+    const stored = await getInspection(id);
     if (!stored) {
       toast({ title: "Inspección no encontrada" });
       return;
     }
-    const raw = stored.data as any;
-    const migrated: InspectionData = {
-      ...(raw as InspectionData),
-      trenMotriz: Object.fromEntries(
-        TREN_MOTRIZ.map((l) => [toKey(l), migrateToEntry(raw?.trenMotriz?.[toKey(l)])])
-      ),
-      motor: Object.fromEntries(
-        MOTOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.motor?.[toKey(l)])])
-      ),
-      interior: Object.fromEntries(
-        INTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.interior?.[toKey(l)])])
-      ),
-      exterior: Object.fromEntries(
-        EXTERIOR_ITEMS.map((l) => [toKey(l), migrateToEntry(raw?.exterior?.[toKey(l)])])
-      ),
-    };
     try {
-      await generateInspectionPdf(migrated, {
+      await generateInspectionPdf(stored, {
         trenMotriz: TREN_MOTRIZ,
         motor: MOTOR_ITEMS,
         exterior: EXTERIOR_ITEMS,
@@ -437,10 +344,6 @@ const Index = () => {
         pruebaRuta: PRUEBA_RUTA_ITEMS,
         accesorios: ACCESORIOS,
         toKey,
-      });
-      toast({
-        title: "Informe generado",
-        description: `PDF descargado para vehículo ${stored.patente || "sin patente"}.`,
       });
     } catch (err) {
       console.error(err);
@@ -477,19 +380,10 @@ const Index = () => {
                 variant="secondary"
                 onClick={handleBack}
                 className="gap-2"
+                disabled={loading}
               >
                 <ArrowLeft className="h-4 w-4" />
                 Volver
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => signOut(auth)}
-                className="gap-2 text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/10"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">Salir</span>
               </Button>
             </div>
           </div>
@@ -548,16 +442,16 @@ const Index = () => {
               <FormField label="Nombre" htmlFor="i-nombre">
                 <Input
                   id="i-nombre"
-                  value={data.inspector.nombre}
-                  onChange={(e) => update("inspector", "nombre", e.target.value)}
+                  value={data.inspectorNombre}
+                  onChange={(e) => setData(prev => ({ ...prev, inspectorNombre: e.target.value }))}
                   placeholder="Inspector responsable"
                 />
               </FormField>
               <FormField label="Dirección" htmlFor="i-dir">
                 <Input
                   id="i-dir"
-                  value={data.inspector.direccion}
-                  onChange={(e) => update("inspector", "direccion", e.target.value)}
+                  value={data.inspectorDireccion}
+                  onChange={(e) => setData(prev => ({ ...prev, inspectorDireccion: e.target.value }))}
                   placeholder="Av. Principal 1234"
                 />
               </FormField>
@@ -565,16 +459,16 @@ const Index = () => {
                 <Input
                   id="i-fecha"
                   type="date"
-                  value={data.inspector.fecha}
-                  onChange={(e) => update("inspector", "fecha", e.target.value)}
+                  value={data.fecha}
+                  onChange={(e) => setData(prev => ({ ...prev, fecha: e.target.value }))}
                 />
               </FormField>
               <FormField label="Hora" htmlFor="i-hora">
                 <Input
                   id="i-hora"
                   type="time"
-                  value={data.inspector.hora}
-                  onChange={(e) => update("inspector", "hora", e.target.value)}
+                  value={data.hora}
+                  onChange={(e) => setData(prev => ({ ...prev, hora: e.target.value }))}
                 />
               </FormField>
             </div>
@@ -827,9 +721,9 @@ const Index = () => {
               ].map(({ key, label }) => (
                 <FormField key={key} label={label} htmlFor={`d-${key}`}>
                   <Select
-                    value={data.documentacion[key as keyof typeof data.documentacion]}
+                    value={(data.documentacion as any)[key]}
                     onValueChange={(v) =>
-                      update("documentacion", key as keyof typeof data.documentacion, v)
+                      update("documentacion", key, v)
                     }
                   >
                     <SelectTrigger id={`d-${key}`}>
@@ -856,13 +750,13 @@ const Index = () => {
               {ACCESORIOS.map(({ key, label }) => (
                 <FormField key={key} label={label} htmlFor={`a-${key}`}>
                   <Select
-                    value={data.accesorios.items[key]}
+                    value={data.equipamiento.items[key]}
                     onValueChange={(v) =>
                       setData((prev) => ({
                         ...prev,
-                        accesorios: {
-                          ...prev.accesorios,
-                          items: { ...prev.accesorios.items, [key]: v as AccStatus },
+                        equipamiento: {
+                          ...prev.equipamiento,
+                          items: { ...prev.equipamiento.items, [key]: v as AccStatus },
                         },
                       }))
                     }
@@ -883,11 +777,11 @@ const Index = () => {
               <FormField label="Otros" htmlFor="a-otros">
                 <Textarea
                   id="a-otros"
-                  value={data.accesorios.otros}
+                  value={data.equipamiento.otros}
                   onChange={(e) =>
                     setData((prev) => ({
                       ...prev,
-                      accesorios: { ...prev.accesorios, otros: e.target.value },
+                      equipamiento: { ...prev.equipamiento, otros: e.target.value },
                     }))
                   }
                   placeholder="Todo su equipamiento en buen estado"
@@ -915,7 +809,7 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {items.map((label) => {
                   const key = toKey(label);
-                  const entry = (data[section]?.[key] as CheckEntry) ?? emptyCheckEntry;
+                  const entry = data.detalles[section][key] ?? emptyCheckEntry;
                   return (
                     <CheckFieldWithImage
                       key={key}
@@ -925,7 +819,10 @@ const Index = () => {
                       onChange={(next) =>
                         setData((prev) => ({
                           ...prev,
-                          [section]: { ...prev[section], [key]: next },
+                          detalles: {
+                            ...prev.detalles,
+                            [section]: { ...prev.detalles[section], [key]: next }
+                          }
                         }))
                       }
                     />
@@ -954,11 +851,14 @@ const Index = () => {
                   return (
                     <FormField key={key} label={label} htmlFor={`${prefix}-${key}`}>
                       <Select
-                        value={(data[section]?.[key] as CheckStatus) ?? ""}
+                        value={data.detalles[section][key]?.estado ?? ""}
                         onValueChange={(v) =>
                           setData((prev) => ({
                             ...prev,
-                            [section]: { ...prev[section], [key]: v as CheckStatus },
+                            detalles: {
+                              ...prev.detalles,
+                              [section]: { ...prev.detalles[section], [key]: { estado: v as CheckStatus } }
+                            }
                           }))
                         }
                       >
@@ -984,9 +884,9 @@ const Index = () => {
             description="Detalles y observaciones de la inspección"
           >
             <Textarea
-              value={data.observaciones}
+              value={data.observacionesGenerales}
               onChange={(e) =>
-                setData((prev) => ({ ...prev, observaciones: e.target.value }))
+                setData((prev) => ({ ...prev, observacionesGenerales: e.target.value }))
               }
               rows={6}
             />
@@ -1007,13 +907,12 @@ const Index = () => {
             />
           </SectionCard>
 
-
-
           <div className="flex flex-wrap justify-end gap-3 pt-2">
             <Button
               type="button"
               variant="outline"
               onClick={() => setData(initialData)}
+              disabled={loading}
             >
               Limpiar
             </Button>
@@ -1022,11 +921,12 @@ const Index = () => {
               variant="secondary"
               onClick={handleSave}
               className="gap-2"
+              disabled={loading}
             >
               <Save className="h-4 w-4" />
-              Guardar inspección
+              {loading ? "Guardando..." : "Guardar en la nube"}
             </Button>
-            <Button type="submit" size="lg" className="gap-2 shadow-[var(--shadow-elegant)]">
+            <Button type="submit" size="lg" className="gap-2 shadow-[var(--shadow-elegant)]" disabled={loading}>
               <FileDown className="h-4 w-4" />
               Generar informe
             </Button>

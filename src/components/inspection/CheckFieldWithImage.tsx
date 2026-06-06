@@ -1,5 +1,5 @@
 import { useRef, type ChangeEvent } from "react";
-import { Upload, X, ImageIcon } from "lucide-react";
+import { Upload, X } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -12,15 +12,15 @@ import {
 } from "@/components/ui/select";
 
 export type CheckEntry = {
-  status: "" | "ok" | "observacion";
+  estado: "" | "ok" | "observacion";
   observacion: string;
-  imagen: { name: string; url: string } | null;
+  imagenUrl: string | null;
 };
 
 export const emptyCheckEntry: CheckEntry = {
-  status: "",
+  estado: "",
   observacion: "",
-  imagen: null,
+  imagenUrl: null,
 };
 
 interface Props {
@@ -36,14 +36,16 @@ export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
   const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    // NOTE: In a real production app, you would upload to Firebase Storage here
+    // and then use the resulting URL. For now, we'll use a temporary local URL.
     onChange({
       ...value,
-      imagen: { name: file.name, url: URL.createObjectURL(file) },
+      imagenUrl: URL.createObjectURL(file),
     });
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const removeImage = () => onChange({ ...value, imagen: null });
+  const removeImage = () => onChange({ ...value, imagenUrl: null });
 
   return (
     <div className="space-y-2">
@@ -53,9 +55,9 @@ export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
       <div className="flex gap-2">
         <div className="flex-1 min-w-0">
           <Select
-            value={value.status}
+            value={value.estado}
             onValueChange={(v) =>
-              onChange({ ...value, status: v as CheckEntry["status"] })
+              onChange({ ...value, estado: v as CheckEntry["estado"] })
             }
           >
             <SelectTrigger id={id}>
@@ -83,16 +85,16 @@ export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
           >
             <Upload className="h-4 w-4 shrink-0" />
             <span className="truncate">
-              {value.imagen ? "Cambiar" : "Subir imagen"}
+              {value.imagenUrl ? "Cambiar" : "Subir imagen"}
             </span>
           </Button>
         </div>
       </div>
-      {value.imagen && (
+      {value.imagenUrl && (
         <div className="relative inline-block">
           <img
-            src={value.imagen.url}
-            alt={value.imagen.name}
+            src={value.imagenUrl}
+            alt="Imagen de inspección"
             className="h-20 w-20 rounded-md border border-border object-cover"
           />
           <button

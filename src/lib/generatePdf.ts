@@ -1,8 +1,7 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoUrl from "@/assets/logo.png";
-
-type AnyData = Record<string, any>;
+import { Inspection } from "./types";
 
 const labelMaps: Record<string, Record<string, string>> = {
   doc: { ok: "OK", atrasado: "Atrasado", no: "NO", "": "—" },
@@ -13,17 +12,12 @@ const labelMaps: Record<string, Record<string, string>> = {
 const fmt = (v: any, kind: "doc" | "acc" | "check" | "text" = "text") => {
   if (kind === "text") return v && String(v).trim() !== "" ? v : "—";
   if (kind === "check" && v && typeof v === "object") {
-    return labelMaps.check[v.status ?? ""] ?? "—";
+    return labelMaps.check[v.estado ?? ""] ?? "—";
   }
   return labelMaps[kind][v] ?? "—";
 };
 
-const prettyKey = (key: string) =>
-  key
-    .replace(/_/g, " ")
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
-export async function generateInspectionPdf(data: AnyData, dictionaries: {
+export async function generateInspectionPdf(data: Inspection, dictionaries: {
   trenMotriz: string[];
   motor: string[];
   exterior: string[];
@@ -47,7 +41,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   doc.text("Informe de Inspección Vehicular", margin, 35);
   doc.setFontSize(10);
   doc.setFont("helvetica", "normal");
-  const meta = `Patente: ${data.vehiculo.patente || "—"}  |  Fecha: ${data.inspector.fecha || "—"}  |  Hora: ${data.inspector.hora || "—"}`;
+  const meta = `Patente: ${data.vehiculo.patente || "—"}  |  Fecha: ${data.fecha || "—"}  |  Hora: ${data.hora || "—"}`;
   doc.text(meta, margin, 55);
 
   // Logo top-right
@@ -98,13 +92,13 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
     ["Teléfono", fmt(data.cliente.telefono)],
   ]);
 
-  // Inspeccionado por
+  // Inspector
   sectionTitle("Inspeccionado por");
   renderTable([
-    ["Nombre", fmt(data.inspector.nombre)],
-    ["Dirección", fmt(data.inspector.direccion)],
-    ["Fecha", fmt(data.inspector.fecha)],
-    ["Hora", fmt(data.inspector.hora)],
+    ["Nombre", fmt(data.inspectorNombre)],
+    ["Dirección", fmt(data.inspectorDireccion)],
+    ["Fecha", fmt(data.fecha)],
+    ["Hora", fmt(data.hora)],
   ]);
 
   // Vehículo
@@ -136,27 +130,32 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   sectionTitle("Equipamiento / Accesorios");
   const accRows: [string, string][] = dictionaries.accesorios.map(({ key, label }) => [
     label,
-    fmt(data.accesorios.items[key], "acc"),
+    fmt(data.equipamiento.items[key], "acc"),
   ]);
-  accRows.push(["Otros", fmt(data.accesorios.otros)]);
+  accRows.push(["Otros", fmt(data.equipamiento.otros)]);
   renderTable(accRows);
 
   // Check sections helper (simple)
-  const checkSection = (title: string, items: string[], section: string) => {
+  const checkSection = (title: string, items: string[], section: "otros" | "pruebaRuta") => {
     sectionTitle(title);
     renderTable(
-      items.map((label) => [label, fmt(data[section]?.[dictionaries.toKey(label)], "check")])
+      items.map((label) => {
+        const key = dictionaries.toKey(label);
+        const entry = data.detalles[section][key];
+        return [label, labelMaps.check[entry?.estado ?? ""] ?? "—"];
+      })
     );
   };
 
   // Check sections con observación + imagen por campo
-  const checkSectionWithExtras = async (title: string, items: string[], section: string) => {
+  const checkSectionWithExtras = async (title: string, items: string[], section: "trenMotriz" | "motor" | "exterior" | "interior") => {
     sectionTitle(title);
     const rows = items.map((label) => {
-      const entry = data[section]?.[dictionaries.toKey(label)] ?? {};
-      const status = labelMaps.check[entry.status ?? ""] ?? "—";
+      const key = dictionaries.toKey(label);
+      const entry = data.detalles[section][key] ?? {};
+      const status = labelMaps.check[entry.estado ?? ""] ?? "—";
       const obs = entry.observacion && entry.observacion.trim() !== "" ? entry.observacion : "—";
-      const hasImg = entry.imagen ? "Sí" : "No";
+      const hasImg = entry.imagenUrl ? "Sí" : "No";
       return [label, status, obs, hasImg];
     });
     autoTable(doc, {
@@ -177,8 +176,8 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
 
     // Render images attached to fields
     const withImages = items
-      .map((label) => ({ label, entry: data[section]?.[dictionaries.toKey(label)] }))
-      .filter((x) => x.entry?.imagen);
+      .map((label) => ({ label, entry: data.detalles[section][dictionaries.toKey(label)] }))
+      .filter((x) => x.entry?.imagenUrl);
 
     if (withImages.length > 0) {
       doc.setFontSize(10);
@@ -194,12 +193,12 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
       let rowStartY = cursorY;
       for (let i = 0; i < withImages.length; i++) {
         const { label, entry } = withImages[i];
+        if (!entry?.imagenUrl) continue;
         const col = i % 2;
         const x = margin + col * (cellWidth + 10);
 
         try {
-          const { dataUrl, width: iw, height: ih } = await loadImageAsDataUrl(entry.imagen.url);
-          // Preserve aspect ratio: fit within cellWidth x maxCellHeight
+          const { dataUrl, width: iw, height: ih } = await loadImageAsDataUrl(entry.imagenUrl);
           const ratio = iw / ih;
           let drawW = cellWidth;
           let drawH = drawW / ratio;
@@ -207,7 +206,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
             drawH = maxCellHeight;
             drawW = drawH * ratio;
           }
-          const cellHeight = drawH + 14; // image + label
+          const cellHeight = drawH + 14;
 
           if (col === 0) {
             if (cursorY + cellHeight > pageHeight - margin) {
@@ -258,7 +257,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
   doc.setFontSize(10);
   doc.setTextColor(15, 23, 42);
   const obsLines = doc.splitTextToSize(
-    data.observaciones || "—",
+    data.observacionesGenerales || "—",
     pageWidth - margin * 2
   );
   if (cursorY + obsLines.length * 12 > pageHeight - margin) {
@@ -293,7 +292,7 @@ export async function generateInspectionPdf(data: AnyData, dictionaries: {
     doc.text(`Página ${p} de ${total}`, pageWidth - margin, pageHeight - 15, { align: "right" });
   }
 
-  const filename = `inspeccion_${data.vehiculo.patente || "sin_patente"}_${data.inspector.fecha || "sin_fecha"}.pdf`;
+  const filename = `inspeccion_${data.vehiculo.patente || "sin_patente"}_${data.fecha || "sin_fecha"}.pdf`;
   doc.save(filename);
 }
 
