@@ -63,7 +63,7 @@ export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
             <SelectTrigger id={id}>
               <SelectValue placeholder="Seleccionar" />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" side="bottom">
               <SelectItem value="ok">OK</SelectItem>
               <SelectItem value="observacion">Observación</SelectItem>
             </SelectContent>

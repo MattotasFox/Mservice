@@ -581,32 +581,42 @@ const Index = () => {
                 />
               </FormField>
               <FormField label="Marca" htmlFor="v-marca">
-                <Input
-                  id="v-marca"
-                  list="brand-list"
+                <Select
                   value={data.vehiculo.marca}
-                  onChange={(e) => update("vehiculo", "marca", e.target.value)}
-                  placeholder="Toyota"
-                />
-                <datalist id="brand-list">
-                  {availableBrands.map(brand => (
-                    <option key={brand} value={brand} />
-                  ))}
-                </datalist>
+                  onValueChange={(v) => {
+                    update("vehiculo", "marca", v);
+                    update("vehiculo", "modelo", ""); // Limpiar modelo al cambiar marca
+                  }}
+                >
+                  <SelectTrigger id="v-marca">
+                    <SelectValue placeholder="Seleccionar marca" />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom">
+                    {availableBrands.map((brand) => (
+                      <SelectItem key={brand} value={brand}>
+                        {brand}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormField>
               <FormField label="Modelo" htmlFor="v-modelo">
-                <Input
-                  id="v-modelo"
-                  list="model-list"
+                <Select
                   value={data.vehiculo.modelo}
-                  onChange={(e) => update("vehiculo", "modelo", e.target.value)}
-                  placeholder="Corolla"
-                />
-                <datalist id="model-list">
-                  {availableModels.map(model => (
-                    <option key={model} value={model} />
-                  ))}
-                </datalist>
+                  onValueChange={(v) => update("vehiculo", "modelo", v)}
+                  disabled={!data.vehiculo.marca}
+                >
+                  <SelectTrigger id="v-modelo">
+                    <SelectValue placeholder={data.vehiculo.marca ? "Seleccionar modelo" : "Primero elija marca"} />
+                  </SelectTrigger>
+                  <SelectContent position="popper" side="bottom">
+                    {availableModels.map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormField>
               <FormField label="Año" htmlFor="v-anio">
                 <Input
@@ -663,7 +673,7 @@ const Index = () => {
                   <SelectTrigger id="v-comb">
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom">
                     <SelectItem value="gasolina">Gasolina</SelectItem>
                     <SelectItem value="diesel">Diésel</SelectItem>
                     <SelectItem value="hibrido">Híbrido</SelectItem>
@@ -680,7 +690,7 @@ const Index = () => {
                   <SelectTrigger id="v-tipo">
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom">
                     <SelectItem value="sedan">Sedán</SelectItem>
                     <SelectItem value="hatchback">Hatchback</SelectItem>
                     <SelectItem value="suv">SUV</SelectItem>
@@ -699,7 +709,7 @@ const Index = () => {
                   <SelectTrigger id="v-trans">
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom">
                     <SelectItem value="manual">Manual</SelectItem>
                     <SelectItem value="automatica">Automática</SelectItem>
                     <SelectItem value="cvt">CVT</SelectItem>
@@ -715,7 +725,7 @@ const Index = () => {
                   <SelectTrigger id="v-trac">
                     <SelectValue placeholder="Seleccionar" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent position="popper" side="bottom">
                     <SelectItem value="fwd">Delantera (FWD)</SelectItem>
                     <SelectItem value="rwd">Trasera (RWD)</SelectItem>
                     <SelectItem value="awd">Total (AWD)</SelectItem>
@@ -748,7 +758,7 @@ const Index = () => {
                     <SelectTrigger id={`d-${key}`}>
                       <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" side="bottom">
                       <SelectItem value="ok">OK</SelectItem>
                       <SelectItem value="atrasado">Atrasado</SelectItem>
                       <SelectItem value="no">NO</SelectItem>
@@ -783,7 +793,7 @@ const Index = () => {
                     <SelectTrigger id={`a-${key}`}>
                       <SelectValue placeholder="Seleccionar" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent position="popper" side="bottom">
                       <SelectItem value="si">SI</SelectItem>
                       <SelectItem value="no">NO</SelectItem>
                       <SelectItem value="na">N/A</SelectItem>
@@ -884,7 +894,7 @@ const Index = () => {
                         <SelectTrigger id={`${prefix}-${key}`}>
                           <SelectValue placeholder="Seleccionar" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent position="popper" side="bottom">
                           <SelectItem value="ok">OK</SelectItem>
                           <SelectItem value="observacion">Observación</SelectItem>
                         </SelectContent>
