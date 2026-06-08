@@ -1,6 +1,7 @@
 import { useState, type FormEvent, useRef, type ChangeEvent, useEffect } from "react";
 import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Save, ArrowLeft, AlertTriangle, CalendarClock, LogOut } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
+import logoMService from "@/assets/LOGO_SIN_FONDO.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +35,7 @@ import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceR
 import { seedMaintenanceRules } from "@/lib/seedFirebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { useAuth } from "@/lib/useAuth";
 import { Inspection, DocStatus, AccStatus, CheckStatus } from "@/lib/types";
 
 const TREN_MOTRIZ = [
@@ -207,6 +209,7 @@ const initialData: Inspection = {
 };
 
 const Index = () => {
+  const { user } = useAuth();
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<Inspection>(initialData);
@@ -255,6 +258,14 @@ const Index = () => {
       setLoading(false);
       return;
     }
+    // Migrar inspecciones antiguas que no tienen inspectorUid
+    if (!(stored as any).inspectorUid && auth.currentUser?.uid) {
+      try {
+        await saveInspection(id, stored);
+      } catch {
+        // ignorar si falla la migración
+      }
+    }
     setCurrentId(id);
     setData(stored);
     setView("edit");
@@ -285,8 +296,11 @@ const Index = () => {
       });
       setView("list");
       setCurrentId(null);
-    } catch (e) {
-      toast({ title: "Error al guardar", description: "Revisa tu conexión." });
+    } catch (e: any) {
+      const msg = e?.code === "permission-denied"
+        ? "Sin permisos para guardar. Solo el inspector que creó la inspección puede editarla."
+        : "Revisa tu conexión e intenta de nuevo.";
+      toast({ title: "Error al guardar", description: msg });
     }
     setLoading(false);
   };
@@ -362,8 +376,13 @@ const Index = () => {
         <div className="container max-w-5xl py-10">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur">
-                <Gauge className="h-7 w-7" />
+              <div className="flex items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur overflow-hidden"
+                style={{ width: "72px", height: "72px" }}>
+                <img
+                  src={logoMService}
+                  alt="M Service"
+                  style={{ width: "60px", height: "60px", objectFit: "contain" }}
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Inspección de Vehículos</h1>

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Plus, Gauge, Pencil, Trash2, FileText, Download, LogOut } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Download, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   loadInspections,
   deleteInspection,
 } from "@/lib/inspectionsStore";
 import { Inspection } from "@/lib/types";
+import logoMService from "@/assets/LOGO_SIN_FONDO.png";
 
 interface Props {
   onNew: () => void;
@@ -51,11 +52,16 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
   return (
     <div className="min-h-screen bg-background">
       <header className="bg-[image:var(--gradient-hero)] text-primary-foreground">
-        <div className="container max-w-5xl py-10">
+        <div className="container max-w-5xl py-6">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-4">
-              <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur">
-                <Gauge className="h-7 w-7" />
+              <div className="flex items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur overflow-hidden"
+                style={{ width: "72px", height: "72px" }}>
+                <img
+                  src={logoMService}
+                  alt="M Service"
+                  style={{ width: "60px", height: "60px", objectFit: "contain" }}
+                />
               </div>
               <div>
                 <h1 className="text-3xl font-bold tracking-tight">Inspecciones</h1>

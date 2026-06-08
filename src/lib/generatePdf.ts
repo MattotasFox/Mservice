@@ -2,7 +2,39 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logoUrl from "@/assets/logo.png";
 import { Inspection } from "./types";
+import { Filesystem, Directory } from "@capacitor/filesystem";
+import { FileOpener } from "@capacitor-community/file-opener";
 
+// ── Capacitor detection ──────────────────────────────────────────────────────
+const isCapacitor = () =>
+  typeof (window as any).Capacitor !== "undefined" &&
+  (window as any).Capacitor.isNativePlatform?.();
+
+// ── Guardar en dispositivo nativo ────────────────────────────────────────────
+const saveWithCapacitor = async (pdfBase64: string, filename: string) => {
+  const result = await Filesystem.writeFile({
+    path: filename,
+    data: pdfBase64,
+    directory: Directory.Documents,
+    recursive: true,
+  });
+
+  if (result.uri) {
+    try {
+      await FileOpener.open({
+        filePath: result.uri,
+        contentType: "application/pdf",
+        openWithDefault: true,
+      });
+    } catch {
+      // FileOpener falló, el archivo igual quedó guardado en Documents
+    }
+  }
+
+  return result.uri;
+};
+
+// ── Label maps ───────────────────────────────────────────────────────────────
 const labelMaps: Record<string, Record<string, string>> = {
   doc: { ok: "OK", atrasado: "Atrasado", no: "NO", "": "—" },
   acc: { si: "SÍ", no: "NO", na: "N/A", "": "—" },
@@ -17,22 +49,26 @@ const fmt = (v: any, kind: "doc" | "acc" | "check" | "text" = "text") => {
   return labelMaps[kind][v] ?? "—";
 };
 
-export async function generateInspectionPdf(data: Inspection, dictionaries: {
-  trenMotriz: string[];
-  motor: string[];
-  exterior: string[];
-  interior: string[];
-  otros: string[];
-  pruebaRuta: string[];
-  accesorios: { key: string; label: string }[];
-  toKey: (s: string) => string;
-}) {
+// ── Main export ──────────────────────────────────────────────────────────────
+export async function generateInspectionPdf(
+  data: Inspection,
+  dictionaries: {
+    trenMotriz: string[];
+    motor: string[];
+    exterior: string[];
+    interior: string[];
+    otros: string[];
+    pruebaRuta: string[];
+    accesorios: { key: string; label: string }[];
+    toKey: (s: string) => string;
+  }
+) {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 40;
 
-  // Header
+  // ── Header ──────────────────────────────────────────────────────────────────
   doc.setFillColor(30, 41, 59);
   doc.rect(0, 0, pageWidth, 70, "F");
   doc.setTextColor(255, 255, 255);
@@ -44,17 +80,26 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
   const meta = `Patente: ${data.vehiculo.patente || "—"}  |  Fecha: ${data.fecha || "—"}  |  Hora: ${data.hora || "—"}`;
   doc.text(meta, margin, 55);
 
-  // Logo top-right
   try {
     const logoData = await loadPngAsDataUrl(logoUrl);
     const logoSize = 56;
-    doc.addImage(logoData, "PNG", pageWidth - margin - logoSize, 7, logoSize, logoSize, undefined, "FAST");
+    doc.addImage(
+      logoData,
+      "PNG",
+      pageWidth - margin - logoSize,
+      7,
+      logoSize,
+      logoSize,
+      undefined,
+      "FAST"
+    );
   } catch {
-    // ignore if logo fails
+    // logo falla silenciosamente
   }
 
   let cursorY = 90;
 
+  // ── Helpers ──────────────────────────────────────────────────────────────────
   const sectionTitle = (title: string) => {
     if (cursorY > pageHeight - 80) {
       doc.addPage();
@@ -83,7 +128,7 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     cursorY = (doc as any).lastAutoTable.finalY + 14;
   };
 
-  // Cliente
+  // ── Secciones ────────────────────────────────────────────────────────────────
   sectionTitle("Cliente");
   renderTable([
     ["Nombre", fmt(data.cliente.nombre)],
@@ -92,7 +137,6 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     ["Teléfono", fmt(data.cliente.telefono)],
   ]);
 
-  // Inspector
   sectionTitle("Inspeccionado por");
   renderTable([
     ["Nombre", fmt(data.inspectorNombre)],
@@ -101,7 +145,6 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     ["Hora", fmt(data.hora)],
   ]);
 
-  // Vehículo
   sectionTitle("Datos del Vehículo");
   renderTable([
     ["Patente", fmt(data.vehiculo.patente)],
@@ -118,7 +161,6 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     ["Tracción", fmt(data.vehiculo.traccion)],
   ]);
 
-  // Documentación
   sectionTitle("Documentación del Vehículo");
   renderTable([
     ["Permiso de circulación", fmt(data.documentacion.permisoCirculacion, "doc")],
@@ -126,7 +168,6 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     ["Seguro obligatorio", fmt(data.documentacion.seguroObligatorio, "doc")],
   ]);
 
-  // Accesorios
   sectionTitle("Equipamiento / Accesorios");
   const accRows: [string, string][] = dictionaries.accesorios.map(({ key, label }) => [
     label,
@@ -135,8 +176,12 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
   accRows.push(["Otros", fmt(data.equipamiento.otros)]);
   renderTable(accRows);
 
-  // Check sections helper (simple)
-  const checkSection = (title: string, items: string[], section: "otros" | "pruebaRuta") => {
+  // Sección simple (sin imagen)
+  const checkSection = (
+    title: string,
+    items: string[],
+    section: "otros" | "pruebaRuta"
+  ) => {
     sectionTitle(title);
     renderTable(
       items.map((label) => {
@@ -147,14 +192,19 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     );
   };
 
-  // Check sections con observación + imagen por campo
-  const checkSectionWithExtras = async (title: string, items: string[], section: "trenMotriz" | "motor" | "exterior" | "interior") => {
+  // Sección con observación + imagen
+  const checkSectionWithExtras = async (
+    title: string,
+    items: string[],
+    section: "trenMotriz" | "motor" | "exterior" | "interior"
+  ) => {
     sectionTitle(title);
     const rows = items.map((label) => {
       const key = dictionaries.toKey(label);
       const entry = data.detalles[section][key] ?? {};
       const status = labelMaps.check[entry.estado ?? ""] ?? "—";
-      const obs = entry.observacion && entry.observacion.trim() !== "" ? entry.observacion : "—";
+      const obs =
+        entry.observacion && entry.observacion.trim() !== "" ? entry.observacion : "—";
       const hasImg = entry.imagenUrl ? "Sí" : "No";
       return [label, status, obs, hasImg];
     });
@@ -174,7 +224,6 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
     });
     cursorY = (doc as any).lastAutoTable.finalY + 14;
 
-    // Render images attached to fields
     const withImages = items
       .map((label) => ({ label, entry: data.detalles[section][dictionaries.toKey(label)] }))
       .filter((x) => x.entry?.imagenUrl);
@@ -183,7 +232,10 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
       doc.setFontSize(10);
       doc.setFont("helvetica", "bold");
       doc.setTextColor(15, 23, 42);
-      if (cursorY > pageHeight - 60) { doc.addPage(); cursorY = margin; }
+      if (cursorY > pageHeight - 60) {
+        doc.addPage();
+        cursorY = margin;
+      }
       doc.text(`Imágenes — ${title}`, margin, cursorY + 10);
       cursorY += 18;
 
@@ -191,6 +243,7 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
       const maxCellHeight = 220;
       let rowMaxHeight = 0;
       let rowStartY = cursorY;
+
       for (let i = 0; i < withImages.length; i++) {
         const { label, entry } = withImages[i];
         if (!entry?.imagenUrl) continue;
@@ -251,7 +304,7 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
   checkSection("Otros", dictionaries.otros, "otros");
   checkSection("Prueba en Ruta", dictionaries.pruebaRuta, "pruebaRuta");
 
-  // Observaciones
+  // ── Observaciones ────────────────────────────────────────────────────────────
   sectionTitle("Observaciones");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -267,7 +320,7 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
   doc.text(obsLines, margin, cursorY + 10);
   cursorY += obsLines.length * 12 + 14;
 
-  // Conclusión
+  // ── Conclusión ───────────────────────────────────────────────────────────────
   sectionTitle("Conclusión");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
@@ -283,19 +336,29 @@ export async function generateInspectionPdf(data: Inspection, dictionaries: {
   doc.text(concLines, margin, cursorY + 10);
   cursorY += concLines.length * 12 + 14;
 
-  // Footer page numbers
+  // ── Paginación ───────────────────────────────────────────────────────────────
   const total = doc.getNumberOfPages();
   for (let p = 1; p <= total; p++) {
     doc.setPage(p);
     doc.setFontSize(8);
     doc.setTextColor(120, 120, 120);
-    doc.text(`Página ${p} de ${total}`, pageWidth - margin, pageHeight - 15, { align: "right" });
+    doc.text(`Página ${p} de ${total}`, pageWidth - margin, pageHeight - 15, {
+      align: "right",
+    });
   }
 
+  // ── Guardar: Capacitor (Android/iOS) vs Web ──────────────────────────────────
   const filename = `inspeccion_${data.vehiculo.patente || "sin_patente"}_${data.fecha || "sin_fecha"}.pdf`;
-  doc.save(filename);
+
+  if (isCapacitor()) {
+    const base64 = doc.output("datauristring").split(",")[1];
+    await saveWithCapacitor(base64, filename);
+  } else {
+    doc.save(filename);
+  }
 }
 
+// ── Image loaders ─────────────────────────────────────────────────────────────
 function loadImageAsDataUrl(
   url: string
 ): Promise<{ dataUrl: string; width: number; height: number }> {
