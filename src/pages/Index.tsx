@@ -160,6 +160,35 @@ const toKey = (label: string) =>
     .replace(/[^a-z0-9]+/g, "_")
     .replace(/^_|_$/g, "");
 
+// Formatea un RUT chileno al estándar visual: 12.345.678-9
+const formatRut = (value: string) => {
+  // Solo dejar números y K/k
+  let clean = value.replace(/[^0-9kK]/g, "").toUpperCase();
+  if (clean.length === 0) return "";
+
+  // Separar cuerpo del dígito verificador (último carácter)
+  let body = clean.slice(0, -1);
+  let dv = clean.slice(-1);
+
+  // Si solo hay un carácter, aún no hay dígito verificador que separar
+  if (clean.length === 1) {
+    body = "";
+    dv = clean;
+  }
+
+  // Agregar puntos cada 3 dígitos al cuerpo, de derecha a izquierda
+  let formattedBody = "";
+  for (let i = 0; i < body.length; i++) {
+    const posFromEnd = body.length - i;
+    formattedBody += body[i];
+    if (posFromEnd > 1 && posFromEnd % 3 === 1) {
+      formattedBody += ".";
+    }
+  }
+
+  return formattedBody ? `${formattedBody}-${dv}` : dv;
+};
+
 const buildCheckEntryRecord = (items: string[]): Record<string, CheckEntry> =>
   items.reduce((acc, label) => ({ ...acc, [toKey(label)]: { ...emptyCheckEntry } }), {});
 
@@ -432,8 +461,12 @@ const Index = () => {
                 <Input
                   id="c-rut"
                   value={data.cliente.rut}
-                  onChange={(e) => update("cliente", "rut", e.target.value)}
+                  onChange={(e) => {
+                    const formatted = formatRut(e.target.value);
+                    update("cliente", "rut", formatted);
+                  }}
                   placeholder="12.345.678-9"
+                  maxLength={12}
                 />
               </FormField>
               <FormField label="Email" htmlFor="c-email">
