@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Plus, Pencil, Trash2, FileText, Download, LogOut } from "lucide-react";
+import { Plus, Pencil, Trash2, FileText, Download, LogOut, Search, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   loadInspections,
   deleteInspection,
@@ -18,6 +19,22 @@ interface Props {
 export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) => {
   const [items, setItems] = useState<Inspection[]>([]);
   const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  const normalize = (value: string) =>
+    (value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const filteredItems = items.filter((it) => {
+    const term = normalize(search);
+    if (!term) return true;
+    const patente = normalize(it.vehiculo?.patente || "");
+    const nombre = normalize(it.cliente?.nombre || "");
+    return patente.includes(term) || nombre.includes(term);
+  });
 
   const fetchInspections = async () => {
     setLoading(true);
@@ -84,8 +101,27 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
       </header>
 
       <main className="container max-w-5xl py-10">
-        <div className="flex justify-end mb-6">
-          <Button onClick={onNew} size="lg" className="gap-2 shadow-[var(--shadow-elegant)]">
+        <div className="flex flex-col sm:flex-row gap-3 justify-between mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por patente o nombre de cliente..."
+              className="pl-9 pr-9"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                aria-label="Limpiar búsqueda"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
+          </div>
+          <Button onClick={onNew} size="lg" className="gap-2 shadow-[var(--shadow-elegant)] shrink-0">
             <Plus className="h-4 w-4" />
             Nueva inspección
           </Button>
@@ -95,16 +131,18 @@ export const InspectionsList = ({ onNew, onOpen, onDownload, onLogout }: Props) 
           <div className="py-20 text-center">
             <p className="text-muted-foreground animate-pulse">Cargando inspecciones...</p>
           </div>
-        ) : items.length === 0 ? (
+        ) : filteredItems.length === 0 ? (
           <div className="rounded-xl border border-dashed border-border bg-card p-12 text-center">
             <FileText className="h-10 w-10 mx-auto text-muted-foreground mb-3" />
             <p className="text-muted-foreground">
-              No hay inspecciones guardadas. Crea una nueva para comenzar.
+              {search
+                ? "No se encontraron inspecciones que coincidan con tu búsqueda."
+                : "No hay inspecciones guardadas. Crea una nueva para comenzar."}
             </p>
           </div>
         ) : (
           <div className="grid gap-3">
-            {items.map((it) => (
+            {filteredItems.map((it) => (
               <button
                 key={it.id}
                 onClick={() => onOpen(it.id!)}

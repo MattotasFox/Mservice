@@ -117,7 +117,7 @@ export async function generateInspectionPdf(
   const renderTable = (rows: [string, string][]) => {
     autoTable(doc, {
       startY: cursorY,
-      head: [["Campo", "Valor"]],
+      head: [["Campo", ""]],
       body: rows,
       margin: { left: margin, right: margin },
       styles: { fontSize: 9, cellPadding: 5 },
@@ -259,7 +259,7 @@ export async function generateInspectionPdf(
             drawH = maxCellHeight;
             drawW = drawH * ratio;
           }
-          const cellHeight = drawH + 14;
+          const cellHeight = drawH + 26;
 
           if (col === 0) {
             if (cursorY + cellHeight > pageHeight - margin) {
@@ -273,10 +273,10 @@ export async function generateInspectionPdf(
           const drawX = x + (cellWidth - drawW) / 2;
           const fmtType = dataUrl.includes("image/png") ? "PNG" : "JPEG";
           doc.addImage(dataUrl, fmtType, drawX, rowStartY, drawW, drawH, undefined, "FAST");
-          doc.setFontSize(8);
-          doc.setFont("helvetica", "normal");
-          doc.setTextColor(80, 80, 80);
-          doc.text(label, drawX, rowStartY + drawH + 10, { maxWidth: drawW });
+          doc.setFontSize(14);
+          doc.setFont("helvetica", "bolditalic");
+          doc.setTextColor(30, 41, 59);
+          doc.text(label, drawX, rowStartY + drawH + 18, { maxWidth: drawW });
 
           if (cellHeight > rowMaxHeight) rowMaxHeight = cellHeight;
         } catch {

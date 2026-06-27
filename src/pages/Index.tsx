@@ -56,7 +56,7 @@ const MOTOR_ITEMS = [
   "Revisión fugas de aceite",
   "Revisión correa auxiliar/accesorios",
   "Nivel/calidad de aceite motor",
-  "Nivel/calidad de aceite líquido refrigerante",
+  "Nivel/calidad de refrigerante",
   "Estado de humo en escape",
   "Revisión soporte de motor",
 ];
@@ -266,8 +266,14 @@ const Index = () => {
         // ignorar si falla la migración
       }
     }
+    // Actualizar fecha y hora automáticamente al editar
+    const updated: Inspection = {
+      ...stored,
+      fecha: new Date().toISOString().split("T")[0],
+      hora: new Date().toTimeString().slice(0, 5),
+    };
     setCurrentId(id);
-    setData(stored);
+    setData(updated);
     setView("edit");
     setLoading(false);
   };
