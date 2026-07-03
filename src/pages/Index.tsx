@@ -408,10 +408,11 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <header className="bg-[image:var(--gradient-hero)] text-primary-foreground">
-        <div className="container max-w-5xl py-10">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur overflow-hidden"
+        <div className="container max-w-5xl py-4 sm:py-8">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Logo solo visible en sm+ */}
+              <div className="hidden sm:flex items-center justify-center rounded-xl bg-primary-foreground/10 backdrop-blur overflow-hidden shrink-0"
                 style={{ width: "72px", height: "72px" }}>
                 <img
                   src={logoMService}
@@ -419,16 +420,18 @@ const Index = () => {
                   style={{ width: "60px", height: "60px", objectFit: "contain" }}
                 />
               </div>
-              <div>
-                <h1 className="text-3xl font-bold tracking-tight">Inspección de Vehículos</h1>
-                <p className="text-primary-foreground/80 mt-1">
+              <div className="min-w-0">
+                <h1 className="text-xl sm:text-3xl font-bold tracking-tight leading-tight truncate">
+                  Inspección de Vehículos
+                </h1>
+                <p className="text-primary-foreground/80 mt-0.5 text-sm sm:text-base truncate">
                   {data.vehiculo.patente
-                    ? `Editando: ${data.vehiculo.patente}`
+                    ? `Patente: ${data.vehiculo.patente}`
                     : "Registro detallado de inspección técnica"}
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 variant="secondary"
@@ -437,7 +440,7 @@ const Index = () => {
                 disabled={loading}
               >
                 <ArrowLeft className="h-4 w-4" />
-                Volver
+                <span className="hidden sm:inline">Volver</span>
               </Button>
             </div>
           </div>

@@ -359,32 +359,34 @@ export async function generateInspectionPdf(
 }
 
 // ── Image loaders ─────────────────────────────────────────────────────────────
-function loadImageAsDataUrl(
+// Usa fetch para evitar problemas CORS con URLs de Firebase Storage.
+async function loadImageAsDataUrl(
   url: string
 ): Promise<{ dataUrl: string; width: number; height: number }> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.naturalWidth;
-      canvas.height = img.naturalHeight;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return reject(new Error("No canvas context"));
-      ctx.drawImage(img, 0, 0);
-      try {
-        resolve({
-          dataUrl: canvas.toDataURL("image/jpeg", 0.85),
-          width: img.naturalWidth,
-          height: img.naturalHeight,
-        });
-      } catch (e) {
-        reject(e);
-      }
-    };
-    img.onerror = reject;
-    img.src = url;
+  // 1. Descargar la imagen como blob mediante fetch
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`HTTP ${response.status} al cargar imagen`);
+  const blob = await response.blob();
+
+  // 2. Convertir blob a dataUrl con FileReader
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onloadend = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
   });
+
+  // 3. Obtener dimensiones reales desde el dataUrl local (sin CORS)
+  const { width, height } = await new Promise<{ width: number; height: number }>(
+    (resolve, reject) => {
+      const img = new Image();
+      img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+      img.onerror = reject;
+      img.src = dataUrl;
+    }
+  );
+
+  return { dataUrl, width, height };
 }
 
 function loadPngAsDataUrl(url: string): Promise<string> {

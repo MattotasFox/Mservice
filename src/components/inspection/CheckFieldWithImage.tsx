@@ -1,5 +1,5 @@
-import { useRef, type ChangeEvent } from "react";
-import { Upload, X } from "lucide-react";
+import { useRef, useState, type ChangeEvent } from "react";
+import { Upload, X, Loader2 } from "lucide-react";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,6 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { storage, auth } from "@/lib/firebase";
+import { ref, uploadBytesResumable, getDownloadURL } from "firebase/storage";
 
 export type CheckEntry = {
   estado: "" | "ok" | "observacion";
@@ -32,17 +34,55 @@ interface Props {
 
 export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
   const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
-  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    // NOTE: In a real production app, you would upload to Firebase Storage here
-    // and then use the resulting URL. For now, we'll use a temporary local URL.
-    onChange({
-      ...value,
-      imagenUrl: URL.createObjectURL(file),
-    });
-    if (fileRef.current) fileRef.current.value = "";
+
+    setUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Ruta única en Storage: inspecciones/{uid}/{timestamp}_{filename}
+      const uid = auth.currentUser?.uid ?? "anonimo";
+      const timestamp = Date.now();
+      const storageRef = ref(
+        storage,
+        `inspecciones/${uid}/${timestamp}_${file.name}`
+      );
+
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      await new Promise<void>((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress = Math.round(
+              (snapshot.bytesTransferred / snapshot.totalBytes) * 100
+            );
+            setUploadProgress(progress);
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
+
+      // Obtener URL pública permanente
+      const downloadUrl = await getDownloadURL(uploadTask.snapshot.ref);
+
+      onChange({
+        ...value,
+        imagenUrl: downloadUrl,
+      });
+    } catch (error) {
+      console.error("Error al subir imagen:", error);
+    } finally {
+      setUploading(false);
+      setUploadProgress(0);
+      if (fileRef.current) fileRef.current.value = "";
+    }
   };
 
   const removeImage = () => onChange({ ...value, imagenUrl: null });
@@ -81,12 +121,22 @@ export const CheckFieldWithImage = ({ id, label, value, onChange }: Props) => {
             type="button"
             variant="outline"
             onClick={() => fileRef.current?.click()}
+            disabled={uploading}
             className="w-full gap-2 px-2"
           >
-            <Upload className="h-4 w-4 shrink-0" />
-            <span className="truncate">
-              {value.imagenUrl ? "Cambiar" : "Subir imagen"}
-            </span>
+            {uploading ? (
+              <>
+                <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                <span className="truncate">{uploadProgress}%</span>
+              </>
+            ) : (
+              <>
+                <Upload className="h-4 w-4 shrink-0" />
+                <span className="truncate">
+                  {value.imagenUrl ? "Cambiar" : "Subir imagen"}
+                </span>
+              </>
+            )}
           </Button>
         </div>
       </div>
