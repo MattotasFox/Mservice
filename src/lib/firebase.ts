@@ -4,12 +4,13 @@ import { getAuth } from "firebase/auth";
 import { getStorage } from "firebase/storage";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyB91wOJ0VPUKmjj4DXdSDYnHQZRgXft5pU",
-  authDomain: "mservice-2ceec.firebaseapp.com",
-  projectId: "mservice-2ceec",
-  storageBucket: "mservice-2ceec.firebasestorage.app",
-  messagingSenderId: "101029623164",
-  appId: "1:101029623164:web:6d272f8557b4be19a160f9"
+    apiKey: "AIzaSyATWjkD3sQhEXlkuH_-EWma9lWHUbhdtmI",
+    authDomain: "m-service-2d665.firebaseapp.com",
+    projectId: "m-service-2d665",
+    storageBucket: "m-service-2d665.firebasestorage.app",
+    messagingSenderId: "251602110085",
+    appId: "1:251602110085:web:c1534ae698c995fb5b4bec",
+    measurementId: "G-7TGV0TCPW0"
 };
 
 const app = initializeApp(firebaseConfig);
