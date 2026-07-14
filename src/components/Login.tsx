@@ -155,7 +155,7 @@ export const Login = ({ onLogin }: LoginProps) => {
           {/* Título */}
           <div style={{ marginBottom: "48px" }}>
             <h1 style={{ color: "white", fontSize: "38px", fontWeight: "700", lineHeight: "1.15", letterSpacing: "-0.8px", marginBottom: "16px" }}>
-              Inspecciones
+              Inspecciones{" "}
               <span style={{ color: "hsl(35 95% 65%)" }}>M Service.</span>
             </h1>
             <p style={{ color: "rgba(255,255,255,0.6)", fontSize: "15px", lineHeight: "1.6", fontFamily: "system-ui, sans-serif", fontWeight: "400", maxWidth: "300px" }}>
@@ -236,17 +236,9 @@ export const Login = ({ onLogin }: LoginProps) => {
 
               {/* Contraseña */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <label style={{ fontSize: "13px", fontWeight: "600", color: "hsl(222 47% 11%)", fontFamily: "system-ui, sans-serif", letterSpacing: "0.2px" }}>
-                    Contraseña
-                  </label>
-                  <button
-                    type="button"
-                    style={{ fontSize: "12px", color: "hsl(215 85% 35%)", background: "none", border: "none", cursor: "pointer", fontFamily: "system-ui, sans-serif", padding: 0, textDecoration: "underline", textUnderlineOffset: "2px" }}
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </button>
-                </div>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "hsl(222 47% 11%)", fontFamily: "system-ui, sans-serif", letterSpacing: "0.2px" }}>
+                  Contraseña
+                </label>
                 <div style={{ position: "relative" }}>
                   <Lock size={16} color="hsl(215 16% 57%)" style={{ position: "absolute", left: "14px", top: "50%", transform: "translateY(-50%)", pointerEvents: "none" }} />
                   <input
