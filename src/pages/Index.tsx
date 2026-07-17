@@ -1,11 +1,10 @@
-import { useState, type FormEvent, useRef, type ChangeEvent, useEffect } from "react";
-import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Save, ArrowLeft, AlertTriangle, CalendarClock, LogOut } from "lucide-react";
+import { useState, type FormEvent, useEffect } from "react";
+import { Car, User, ClipboardCheck, FileDown, Gauge, FileText, Wrench, Cog, Settings, Eye, Armchair, ListChecks, Route, MessageSquare, Save, ArrowLeft, LogOut } from "lucide-react";
 import { generateInspectionPdf } from "@/lib/generatePdf";
 import logoMService from "@/assets/LOGO_SIN_FONDO.png";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -13,14 +12,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { toast } from "@/hooks/use-toast";
 import { SectionCard } from "@/components/inspection/SectionCard";
 import { FormField } from "@/components/inspection/FormField";
@@ -31,12 +22,10 @@ import {
   type CheckEntry,
 } from "@/components/inspection/CheckFieldWithImage";
 import { saveInspection, getInspection, newId } from "@/lib/inspectionsStore";
-import { getMaintenanceRecommendations, fetchMaintenanceRules, type MaintenanceRule, maintenanceRules } from "@/lib/maintenanceRecommendations";
-import { seedMaintenanceRules } from "@/lib/seedFirebase";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/lib/useAuth";
-import { Inspection, DocStatus, AccStatus, CheckStatus } from "@/lib/types";
+import { Inspection, AccStatus, CheckStatus } from "@/lib/types";
 
 const TREN_MOTRIZ = [
   "Neumáticos",
@@ -152,6 +141,12 @@ const ACCESORIOS: { key: string; label: string }[] = [
   { key: "extintor", label: "Extintor" },
 ];
 
+const VEHICLE_BRANDS = [
+  "Chevrolet", "Toyota", "Hyundai", "Kia", "Nissan", "Mazda", "Ford",
+  "Volkswagen", "Peugeot", "Suzuki", "Tesla", "Ferrari", "BMW",
+  "Mercedes-Benz", "Audi", "Honda", "Subaru", "Mitsubishi", "Volvo", "MG"
+].sort();
+
 const toKey = (label: string) =>
   label
     .toLowerCase()
@@ -242,36 +237,7 @@ const Index = () => {
   const [view, setView] = useState<"list" | "edit">("list");
   const [currentId, setCurrentId] = useState<string | null>(null);
   const [data, setData] = useState<Inspection>(initialData);
-  const [rules, setRules] = useState<MaintenanceRule[]>(maintenanceRules);
   const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    const setup = async () => {
-      await seedMaintenanceRules();
-      const rulesData = await fetchMaintenanceRules();
-      setRules(rulesData);
-    };
-    setup();
-  }, []);
-
-  const maintenanceRecommendations = getMaintenanceRecommendations({
-    marca: data.vehiculo.marca,
-    modelo: data.vehiculo.modelo,
-    anio: data.vehiculo.anio,
-    kilometraje: data.vehiculo.kilometraje
-  }, rules);
-
-  const availableBrands = Array.from(new Set(
-    rules.flatMap(r => r.appliesTo?.brandIncludes || [])
-  )).map(b => b.charAt(0).toUpperCase() + b.slice(1)).sort();
-
-  const searchBrand = data.vehiculo.marca.toLowerCase();
-  const availableModels = Array.from(new Set(
-    rules.filter(r => {
-      if (!searchBrand) return true;
-      return r.appliesTo?.brandIncludes?.some(b => b.toLowerCase().includes(searchBrand));
-    }).flatMap(r => r.appliesTo?.modelIncludes || [])
-  )).map(m => m.charAt(0).toUpperCase() + m.slice(1)).sort();
 
   const handleNew = () => {
     setCurrentId(newId());
@@ -286,14 +252,6 @@ const Index = () => {
       toast({ title: "Inspección no encontrada" });
       setLoading(false);
       return;
-    }
-    // Migrar inspecciones antiguas que no tienen inspectorUid
-    if (!(stored as any).inspectorUid && auth.currentUser?.uid) {
-      try {
-        await saveInspection(id, stored);
-      } catch {
-        // ignorar si falla la migración
-      }
     }
     // Actualizar fecha y hora automáticamente al editar
     const updated: Inspection = {
@@ -540,75 +498,6 @@ const Index = () => {
             title="Datos del Vehículo"
             icon={Car}
             description="Especificaciones técnicas e identificación"
-            action={
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button variant="default" className="gap-2 shadow-[var(--shadow-elegant)]">
-                    <CalendarClock className="h-4 w-4" />
-                    Mantenciones sugeridas
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                      <CalendarClock className="h-5 w-5 text-primary" />
-                      Mantenciones Sugeridas
-                    </DialogTitle>
-                    <DialogDescription>
-                      Recomendaciones basadas en {data.vehiculo.marca} {data.vehiculo.modelo} ({data.vehiculo.kilometraje} km)
-                    </DialogDescription>
-                  </DialogHeader>
-
-                  <div className="py-4">
-                    {maintenanceRecommendations.length > 0 ? (
-                      <div className="space-y-3">
-                        {maintenanceRecommendations.map((recommendation) => (
-                          <div
-                            key={recommendation.id}
-                            className="flex flex-col gap-3 rounded-lg border border-border/70 bg-secondary/20 p-4 md:flex-row md:items-start md:justify-between"
-                          >
-                            <div className="flex gap-3">
-                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                                <AlertTriangle className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <h3 className="font-semibold text-foreground">
-                                  {recommendation.title}
-                                </h3>
-                                <p className="mt-1 text-sm text-muted-foreground">
-                                  {recommendation.detail}
-                                </p>
-                                <p className="mt-2 text-sm text-muted-foreground">
-                                  Mantención de referencia:{" "}
-                                  <span className="font-medium text-foreground">
-                                    {recommendation.dueKm.toLocaleString("es-CL")} km
-                                  </span>
-                                </p>
-                              </div>
-                            </div>
-                            <Badge
-                              variant={recommendation.priority === "due" ? "destructive" : "secondary"}
-                              className="w-fit shrink-0"
-                            >
-                              {recommendation.priority === "due"
-                                ? "Necesita atención"
-                                : `Faltan ${recommendation.kmRemaining.toLocaleString("es-CL")} km`}
-                            </Badge>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="flex flex-col items-center justify-center py-10 text-center border rounded-lg border-dashed">
-                        <Car className="h-10 w-10 text-muted-foreground/40 mb-3" />
-                        <p className="text-sm text-muted-foreground">
-                          Ingresa marca, modelo y kilometraje válido para ver recomendaciones.
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </DialogContent>
-              </Dialog>
-            }
           >
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
               <FormField label="Patente" htmlFor="v-patente">
@@ -623,42 +512,26 @@ const Index = () => {
                 />
               </FormField>
               <FormField label="Marca" htmlFor="v-marca">
-                <Select
+                <Input
+                  id="v-marca"
+                  list="brand-list"
                   value={data.vehiculo.marca}
-                  onValueChange={(v) => {
-                    update("vehiculo", "marca", v);
-                    update("vehiculo", "modelo", ""); // Limpiar modelo al cambiar marca
-                  }}
-                >
-                  <SelectTrigger id="v-marca">
-                    <SelectValue placeholder="Seleccionar marca" />
-                  </SelectTrigger>
-                  <SelectContent position="popper" side="bottom">
-                    {availableBrands.map((brand) => (
-                      <SelectItem key={brand} value={brand}>
-                        {brand}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => update("vehiculo", "marca", e.target.value)}
+                  placeholder="Toyota"
+                />
+                <datalist id="brand-list">
+                  {VEHICLE_BRANDS.map(brand => (
+                    <option key={brand} value={brand} />
+                  ))}
+                </datalist>
               </FormField>
               <FormField label="Modelo" htmlFor="v-modelo">
-                <Select
+                <Input
+                  id="v-modelo"
                   value={data.vehiculo.modelo}
-                  onValueChange={(v) => update("vehiculo", "modelo", v)}
-                  disabled={!data.vehiculo.marca}
-                >
-                  <SelectTrigger id="v-modelo">
-                    <SelectValue placeholder={data.vehiculo.marca ? "Seleccionar modelo" : "Primero elija marca"} />
-                  </SelectTrigger>
-                  <SelectContent position="popper" side="bottom">
-                    {availableModels.map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                  onChange={(e) => update("vehiculo", "modelo", e.target.value)}
+                  placeholder="Corolla"
+                />
               </FormField>
               <FormField label="Año" htmlFor="v-anio">
                 <Input
